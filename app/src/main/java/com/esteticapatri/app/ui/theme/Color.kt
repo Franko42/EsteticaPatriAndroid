@@ -1,58 +1,69 @@
 package com.esteticapatri.app.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Light Colors
-val RosePrimaryLight = Color(0xFF9C415D)
-val RoseOnPrimaryLight = Color(0xFFFFFFFF)
-val RosePrimaryContainerLight = Color(0xFFFFD9E2)
-val RoseOnPrimaryContainerLight = Color(0xFF3E001D)
+// Pastel Feminine Aesthetics - Estética Patri
+val PastelRose = Color(0xFFD85D7F)
+val PastelRoseLightContainer = Color(0xFFFFE8EF)
+val PastelRoseOnContainer = Color(0xFF491024)
 
-val RoseSecondaryLight = Color(0xFF74565F)
-val RoseOnSecondaryLight = Color(0xFFFFFFFF)
-val RoseSecondaryContainerLight = Color(0xFFFFD9E2)
-val RoseOnSecondaryContainerLight = Color(0xFF2B151C)
+val PastelLavender = Color(0xFF8D6E97)
+val PastelLavenderContainer = Color(0xFFF3E8FF)
+val PastelLavenderOnContainer = Color(0xFF33143B)
 
-val RoseTertiaryLight = Color(0xFF7C5635)
-val RoseOnTertiaryLight = Color(0xFFFFFFFF)
-val RoseTertiaryContainerLight = Color(0xFFFFDCC1)
-val RoseOnTertiaryContainerLight = Color(0xFF2E1500)
+val PastelPeach = Color(0xFFD97757)
+val PastelPeachContainer = Color(0xFFFFECE2)
+val PastelPeachOnContainer = Color(0xFF421B0E)
 
-val SurfaceLight = Color(0xFFFFF8F8)
-val OnSurfaceLight = Color(0xFF22191C)
-val SurfaceVariantLight = Color(0xFFF2DDE1)
-val OnSurfaceVariantLight = Color(0xFF514347)
-val OutlineLight = Color(0xFF837377)
+val PastelBackground = Color(0xFFFFF8FA)
+val PastelSurface = Color(0xFFFFFFFF)
+val PastelSurfaceVariant = Color(0xFFFDF0F4)
+val PastelOutline = Color(0xFFEED5DC)
+val PastelOnBackground = Color(0xFF2D161F)
+val PastelOnSurface = Color(0xFF2D161F)
 
-// Dark Colors
-val RosePrimaryDark = Color(0xFFFFB1C8)
-val RoseOnPrimaryDark = Color(0xFF5E1133)
-val RosePrimaryContainerDark = Color(0xFF7D2947)
-val RoseOnPrimaryContainerDark = Color(0xFFFFD9E2)
+// Dark Palette with Velvet Rose tones
+val VelvetRose = Color(0xFFFFB1C8)
+val VelvetRoseContainer = Color(0xFF6F1B3B)
+val VelvetRoseOnContainer = Color(0xFFFFD9E2)
 
-val RoseSecondaryDark = Color(0xFFE2BDC6)
-val RoseOnSecondaryDark = Color(0xFF422931)
-val RoseSecondaryContainerDark = Color(0xFF5B3F48)
-val RoseOnSecondaryContainerDark = Color(0xFFFFD9E2)
+val VelvetLavender = Color(0xFFD6BCE0)
+val VelvetLavenderContainer = Color(0xFF563A60)
 
-val RoseTertiaryDark = Color(0xFFF0BC94)
-val RoseOnTertiaryDark = Color(0xFF472A0C)
-val RoseTertiaryContainerDark = Color(0xFF624020)
-val RoseOnTertiaryContainerDark = Color(0xFFFFDCC1)
+val VelvetBackground = Color(0xFF1C1115)
+val VelvetSurface = Color(0xFF24161C)
+val VelvetSurfaceVariant = Color(0xFF38232B)
+val VelvetOutline = Color(0xFF624650)
+val VelvetOnBackground = Color(0xFFFCEEED)
+val VelvetOnSurface = Color(0xFFFCEEED)
 
-val SurfaceDark = Color(0xFF191114)
-val OnSurfaceDark = Color(0xFFEFE0E2)
-val SurfaceVariantDark = Color(0xFF514347)
-val OnSurfaceVariantDark = Color(0xFFD5C2C6)
-val OutlineDark = Color(0xFF9E8C90)
+// High-contrast semantic status badges
+val StatusScheduledPastel = Color(0xFF2563EB)
+val StatusScheduledContainer = Color(0xFFDBEAFE)
 
-// Semantic Status Colors (Contrast compliant)
-val StatusScheduledLight = Color(0xFF1565C0)
-val StatusCompletedLight = Color(0xFF2E7D32)
-val StatusCancelledLight = Color(0xFFC62828)
-val StatusNoShowLight = Color(0xFFEF6C00)
+val StatusCompletedPastel = Color(0xFF059669)
+val StatusCompletedContainer = Color(0xFFD1FAE5)
 
-val StatusScheduledDark = Color(0xFF90CAF9)
-val StatusCompletedDark = Color(0xFFA5D6A7)
-val StatusCancelledDark = Color(0xFFEF9A9A)
-val StatusNoShowDark = Color(0xFFFFCC80)
+val StatusCancelledPastel = Color(0xFFDC2626)
+val StatusCancelledContainer = Color(0xFFFEE2E2)
+
+val StatusNoShowPastel = Color(0xFFD97706)
+val StatusNoShowContainer = Color(0xFFFEF3C7)
+
+// Decorative Soft Gradients for Cards and Headers
+val RoseBlushGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFFFEEF3), Color(0xFFFFF8FA))
+)
+
+val LavenderBlushGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFFF7ECFF), Color(0xFFFFEEF5))
+)
+
+val GoldenRoseGradient = Brush.horizontalGradient(
+    colors = listOf(Color(0xFFF472B6), Color(0xFFFBBF24))
+)
+
+val DarkVelvetGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFF2D1722), Color(0xFF1E1017))
+)

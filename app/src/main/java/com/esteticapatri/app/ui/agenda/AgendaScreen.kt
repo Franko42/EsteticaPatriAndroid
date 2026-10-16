@@ -1,9 +1,13 @@
 package com.esteticapatri.app.ui.agenda
 
 import android.content.Context
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,14 +15,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.esteticapatri.app.R
 import com.esteticapatri.app.data.local.AppointmentEntity
 import com.esteticapatri.app.data.local.AppointmentWithDetails
 import com.esteticapatri.app.integrations.WhatsAppHelper
 import com.esteticapatri.app.integrations.WhatsAppMessageBuilder
+import com.esteticapatri.app.ui.components.EmptyStateCard
+import com.esteticapatri.app.ui.theme.PastelOutline
+import com.esteticapatri.app.ui.theme.RoseBlushGradient
 import com.esteticapatri.app.ui.theme.StatusColors
 import java.time.Instant
 import java.time.LocalDate
@@ -52,7 +63,24 @@ fun AgendaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agenda de Turnos", fontWeight = FontWeight.Bold) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            shadowElevation = 2.dp
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo_estetica_patri),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text("Agenda de Turnos", fontWeight = FontWeight.Bold)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -72,7 +100,8 @@ fun AgendaScreen(
                 onClick = onNavigateToNewAppointment,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(56.dp)
+                shape = CircleShape,
+                modifier = Modifier.size(58.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nuevo turno")
             }
@@ -91,42 +120,59 @@ fun AgendaScreen(
                 onNextDay = { viewModel.onNextDay() }
             )
 
-            HorizontalDivider()
+            // Daily Summary Chips (when appointments exist)
+            if (appointments.isNotEmpty()) {
+                val scheduledCount = appointments.count { it.appointment.status == AppointmentEntity.SCHEDULED }
+                val completedCount = appointments.count { it.appointment.status == AppointmentEntity.COMPLETED }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SuggestionChip(
+                        onClick = {},
+                        label = { Text("$scheduledCount pendientes", fontWeight = FontWeight.Medium) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        )
+                    )
+                    if (completedCount > 0) {
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text("$completedCount atendidos", fontWeight = FontWeight.Medium) },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = PastelOutline.copy(alpha = 0.5f))
 
             if (appointments.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.DateRange,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            "No hay turnos para este día",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedButton(
-                            onClick = onNavigateToNewAppointment,
-                            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
-                        ) {
-                            Text("Agendar un nuevo turno")
-                        }
-                    }
+                    EmptyStateCard(
+                        imageResId = R.drawable.illustration_empty_calendar,
+                        title = "Día sin turnos agendados",
+                        description = "No hay turnos registrados para esta fecha. Podés programar citas de manicura, faciales o pestañas tocando el botón.",
+                        actionLabel = "Agendar Turno",
+                        actionIcon = Icons.Default.Add,
+                        onActionClick = onNavigateToNewAppointment
+                    )
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(appointments, key = { it.appointment.id }) { item ->
                         AppointmentItemCard(
@@ -174,7 +220,7 @@ fun AgendaScreen(
     appointmentToNoShow?.let { item ->
         AlertDialog(
             onDismissRequest = { appointmentToNoShow = null },
-            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusColors.noShow()) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusColors.noShow().color) },
             title = { Text("¿Marcar que no asistió?", fontWeight = FontWeight.Bold) },
             text = {
                 Text("El turno de ${item.client.name} se marcará como No Asistió.")
@@ -218,18 +264,19 @@ private fun DateNavigationHeader(
             onClick = onPreviousDay,
             modifier = Modifier.size(48.dp)
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Día anterior")
+            Icon(Icons.Default.ArrowBack, contentDescription = "Día anterior", tint = MaterialTheme.colorScheme.primary)
         }
         Text(
             text = dateText,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
         IconButton(
             onClick = onNextDay,
             modifier = Modifier.size(48.dp)
         ) {
-            Icon(Icons.Default.ArrowForward, contentDescription = "Día siguiente")
+            Icon(Icons.Default.ArrowForward, contentDescription = "Día siguiente", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -250,21 +297,27 @@ private fun AppointmentItemCard(
     val endTime = Instant.ofEpochMilli(item.appointment.endEpochMillis).atZone(zone).format(timeFormatter)
     val dateStr = Instant.ofEpochMilli(item.appointment.startEpochMillis).atZone(zone).format(dateFormatter)
 
-    val (statusLabel, statusColor) = when (item.appointment.status) {
+    val (statusLabel, token) = when (item.appointment.status) {
         AppointmentEntity.SCHEDULED -> "Programado" to StatusColors.scheduled()
         AppointmentEntity.COMPLETED -> "Completado" to StatusColors.completed()
         AppointmentEntity.CANCELLED -> "Cancelado" to StatusColors.cancelled()
         AppointmentEntity.NO_SHOW -> "No asistió" to StatusColors.noShow()
-        else -> item.appointment.status to MaterialTheme.colorScheme.outline
+        else -> item.appointment.status to StatusColors.scheduled()
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, PastelOutline.copy(alpha = 0.6f), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .background(RoseBlushGradient)
+                .padding(16.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,11 +343,11 @@ private fun AppointmentItemCard(
                 // Status Badge
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = statusColor.copy(alpha = 0.15f)
+                    color = token.container
                 ) {
                     Text(
                         text = statusLabel,
-                        color = statusColor,
+                        color = token.color,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -302,13 +355,13 @@ private fun AppointmentItemCard(
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
 
             // Client Name & Phone
             Text(
                 text = item.client.name,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
             item.client.phone?.let { phone ->
                 Spacer(Modifier.height(2.dp))
@@ -319,7 +372,7 @@ private fun AppointmentItemCard(
                 )
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Service Name, Duration & Price with real vector icons
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -347,7 +400,7 @@ private fun AppointmentItemCard(
                     Text(
                         text = "$ ${priceUnits / 100}",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -357,20 +410,20 @@ private fun AppointmentItemCard(
             item.appointment.notes?.let { notes ->
                 Spacer(Modifier.height(8.dp))
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = "Nota: $notes",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
 
             // Action Buttons with >= 48dp touch targets and 8dp spacing
             Row(
@@ -409,7 +462,7 @@ private fun AppointmentItemCard(
                         Icon(
                             Icons.Default.CheckCircle,
                             contentDescription = "Marcar completado",
-                            tint = StatusColors.completed()
+                            tint = StatusColors.completed().color
                         )
                     }
                     Spacer(Modifier.width(8.dp))
@@ -421,7 +474,7 @@ private fun AppointmentItemCard(
                         Icon(
                             Icons.Default.Warning,
                             contentDescription = "Marcar no asistió",
-                            tint = StatusColors.noShow()
+                            tint = StatusColors.noShow().color
                         )
                     }
                     Spacer(Modifier.width(8.dp))
@@ -433,7 +486,7 @@ private fun AppointmentItemCard(
                         Icon(
                             Icons.Default.Cancel,
                             contentDescription = "Cancelar turno",
-                            tint = StatusColors.cancelled()
+                            tint = StatusColors.cancelled().color
                         )
                     }
                 }

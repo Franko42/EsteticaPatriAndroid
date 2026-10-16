@@ -11,54 +11,52 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val LightColorScheme = lightColorScheme(
-    primary = RosePrimaryLight,
-    onPrimary = RoseOnPrimaryLight,
-    primaryContainer = RosePrimaryContainerLight,
-    onPrimaryContainer = RoseOnPrimaryContainerLight,
-    secondary = RoseSecondaryLight,
-    onSecondary = RoseOnSecondaryLight,
-    secondaryContainer = RoseSecondaryContainerLight,
-    onSecondaryContainer = RoseOnSecondaryContainerLight,
-    tertiary = RoseTertiaryLight,
-    onTertiary = RoseOnTertiaryLight,
-    tertiaryContainer = RoseTertiaryContainerLight,
-    onTertiaryContainer = RoseOnTertiaryContainerLight,
-    background = SurfaceLight,
-    onBackground = OnSurfaceLight,
-    surface = SurfaceLight,
-    onSurface = OnSurfaceLight,
-    surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = OnSurfaceVariantLight,
-    outline = OutlineLight
+private val PastelLightColorScheme = lightColorScheme(
+    primary = PastelRose,
+    onPrimary = Color.White,
+    primaryContainer = PastelRoseLightContainer,
+    onPrimaryContainer = PastelRoseOnContainer,
+    secondary = PastelLavender,
+    onSecondary = Color.White,
+    secondaryContainer = PastelLavenderContainer,
+    onSecondaryContainer = PastelLavenderOnContainer,
+    tertiary = PastelPeach,
+    onTertiary = Color.White,
+    tertiaryContainer = PastelPeachContainer,
+    onTertiaryContainer = PastelPeachOnContainer,
+    background = PastelBackground,
+    onBackground = PastelOnBackground,
+    surface = PastelSurface,
+    onSurface = PastelOnSurface,
+    surfaceVariant = PastelSurfaceVariant,
+    onSurfaceVariant = Color(0xFF6B4D58),
+    outline = PastelOutline
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = RosePrimaryDark,
-    onPrimary = RoseOnPrimaryDark,
-    primaryContainer = RosePrimaryContainerDark,
-    onPrimaryContainer = RoseOnPrimaryContainerDark,
-    secondary = RoseSecondaryDark,
-    onSecondary = RoseOnSecondaryDark,
-    secondaryContainer = RoseSecondaryContainerDark,
-    onSecondaryContainer = RoseOnSecondaryContainerDark,
-    tertiary = RoseTertiaryDark,
-    onTertiary = RoseOnTertiaryDark,
-    tertiaryContainer = RoseTertiaryContainerDark,
-    onTertiaryContainer = RoseOnTertiaryContainerDark,
-    background = SurfaceDark,
-    onBackground = OnSurfaceDark,
-    surface = SurfaceDark,
-    onSurface = OnSurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = OnSurfaceVariantDark,
-    outline = OutlineDark
+private val VelvetDarkColorScheme = darkColorScheme(
+    primary = VelvetRose,
+    onPrimary = Color(0xFF560A29),
+    primaryContainer = VelvetRoseContainer,
+    onPrimaryContainer = VelvetRoseOnContainer,
+    secondary = VelvetLavender,
+    onSecondary = Color(0xFF381F42),
+    secondaryContainer = VelvetLavenderContainer,
+    onSecondaryContainer = Color(0xFFF3E8FF),
+    tertiary = Color(0xFFFFB69D),
+    onTertiary = Color(0xFF501F0E),
+    background = VelvetBackground,
+    onBackground = VelvetOnBackground,
+    surface = VelvetSurface,
+    onSurface = VelvetOnSurface,
+    surfaceVariant = VelvetSurfaceVariant,
+    onSurfaceVariant = Color(0xFFD8BFC8),
+    outline = VelvetOutline
 )
 
 @Composable
 fun EsteticaPatriTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Default false to keep curated pastel salon identity
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -66,8 +64,8 @@ fun EsteticaPatriTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> VelvetDarkColorScheme
+        else -> PastelLightColorScheme
     }
 
     MaterialTheme(
@@ -77,19 +75,25 @@ fun EsteticaPatriTheme(
 }
 
 object StatusColors {
-    @Composable
-    fun scheduled(darkTheme: Boolean = isSystemInDarkTheme()): Color =
-        if (darkTheme) StatusScheduledDark else StatusScheduledLight
+    data class StatusToken(val color: Color, val container: Color)
 
     @Composable
-    fun completed(darkTheme: Boolean = isSystemInDarkTheme()): Color =
-        if (darkTheme) StatusCompletedDark else StatusCompletedLight
+    fun scheduled(darkTheme: Boolean = isSystemInDarkTheme()): StatusToken =
+        if (darkTheme) StatusToken(Color(0xFF93C5FD), Color(0xFF1E3A8A))
+        else StatusToken(StatusScheduledPastel, StatusScheduledContainer)
 
     @Composable
-    fun cancelled(darkTheme: Boolean = isSystemInDarkTheme()): Color =
-        if (darkTheme) StatusCancelledDark else StatusCancelledLight
+    fun completed(darkTheme: Boolean = isSystemInDarkTheme()): StatusToken =
+        if (darkTheme) StatusToken(Color(0xFF6EE7B7), Color(0xFF064E3B))
+        else StatusToken(StatusCompletedPastel, StatusCompletedContainer)
 
     @Composable
-    fun noShow(darkTheme: Boolean = isSystemInDarkTheme()): Color =
-        if (darkTheme) StatusNoShowDark else StatusNoShowLight
+    fun cancelled(darkTheme: Boolean = isSystemInDarkTheme()): StatusToken =
+        if (darkTheme) StatusToken(Color(0xFFFCA5A5), Color(0xFF7F1D1D))
+        else StatusToken(StatusCancelledPastel, StatusCancelledContainer)
+
+    @Composable
+    fun noShow(darkTheme: Boolean = isSystemInDarkTheme()): StatusToken =
+        if (darkTheme) StatusToken(Color(0xFFFCD34D), Color(0xFF78350F))
+        else StatusToken(StatusNoShowPastel, StatusNoShowContainer)
 }

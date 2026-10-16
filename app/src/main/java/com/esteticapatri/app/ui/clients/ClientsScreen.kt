@@ -1,8 +1,11 @@
 package com.esteticapatri.app.ui.clients
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,12 +13,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.esteticapatri.app.R
 import com.esteticapatri.app.data.local.ClientEntity
 import com.esteticapatri.app.integrations.WhatsAppHelper
+import com.esteticapatri.app.ui.components.EmptyStateCard
+import com.esteticapatri.app.ui.theme.LavenderBlushGradient
+import com.esteticapatri.app.ui.theme.PastelOutline
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +50,7 @@ fun ClientsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Clientas", fontWeight = FontWeight.Bold) },
+                title = { Text("Directorio de Clientas", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -54,7 +62,8 @@ fun ClientsScreen(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(56.dp)
+                shape = CircleShape,
+                modifier = Modifier.size(58.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nueva clienta")
             }
@@ -72,9 +81,9 @@ fun ClientsScreen(
                 onValueChange = { viewModel.onSearchQueryChange(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Buscar por nombre o teléfono...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                placeholder = { Text("Buscar clienta por nombre o teléfono...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(
@@ -86,20 +95,23 @@ fun ClientsScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             )
 
             if (clients.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        if (searchQuery.isEmpty()) "No hay clientas registradas." else "No se encontraron clientas.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
+                    EmptyStateCard(
+                        imageResId = R.drawable.illustration_clients_beauty,
+                        title = if (searchQuery.isEmpty()) "Aún no hay clientas registradas" else "No se encontraron clientas",
+                        description = if (searchQuery.isEmpty()) "Comenzá a registrar a tus clientas para agendar turnos y contactarlas directamente por WhatsApp." else "Probá buscando con otro nombre o número.",
+                        actionLabel = if (searchQuery.isEmpty()) "Agregar Clienta" else null,
+                        actionIcon = Icons.Default.PersonAdd,
+                        onActionClick = { showAddDialog = true }
                     )
                 }
             } else {
@@ -192,26 +204,52 @@ private fun ClientItemCard(
     onDeleteClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, PastelOutline.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .background(LavenderBlushGradient)
+                .padding(14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Initials Avatar
+            val initials = client.name.split(" ")
+                .filter { it.isNotEmpty() }
+                .take(2)
+                .map { it.first().uppercase() }
+                .joinToString("")
+
+            Surface(
+                modifier = Modifier.size(46.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = initials,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = client.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 client.phone?.let { phone ->
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = phone,
                         style = MaterialTheme.typography.bodyMedium,
@@ -240,7 +278,7 @@ private fun ClientItemCard(
                             tint = Color(0xFF25D366)
                         )
                     }
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(Modifier.width(2.dp))
                 }
                 IconButton(
                     onClick = onEditClick,
@@ -248,7 +286,7 @@ private fun ClientItemCard(
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.secondary)
                 }
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(2.dp))
                 IconButton(
                     onClick = onDeleteClick,
                     modifier = Modifier.size(48.dp)
@@ -283,6 +321,7 @@ private fun ClientFormDialog(
                     onValueChange = { name = it },
                     label = { Text("Nombre y Apellido *") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -291,13 +330,15 @@ private fun ClientFormDialog(
                     label = { Text("Teléfono (con código de país)") },
                     placeholder = { Text("Ej: 5493764000000") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notas / Observaciones") },
+                    label = { Text("Notas / Preferencias estéticas") },
                     maxLines = 3,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -305,7 +346,8 @@ private fun ClientFormDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(name, phone.takeIf { it.isNotBlank() }, notes.takeIf { it.isNotBlank() }) },
-                enabled = name.isNotBlank()
+                enabled = name.isNotBlank(),
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Text("Guardar")
             }

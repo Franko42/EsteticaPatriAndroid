@@ -1,5 +1,10 @@
 package com.esteticapatri.app.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -11,9 +16,9 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -25,111 +30,60 @@ import com.esteticapatri.app.ui.agenda.AgendaScreen
 import com.esteticapatri.app.ui.agenda.AgendaViewModel
 import com.esteticapatri.app.ui.clients.ClientsScreen
 import com.esteticapatri.app.ui.clients.ClientsViewModel
+import com.esteticapatri.app.ui.components.SplashScreen
 import com.esteticapatri.app.ui.newappointment.NewAppointmentScreen
 import com.esteticapatri.app.ui.newappointment.NewAppointmentViewModel
 import com.esteticapatri.app.ui.services.ServicesScreen
 import com.esteticapatri.app.ui.services.ServicesViewModel
 import com.esteticapatri.app.ui.settings.SettingsScreen
 import com.esteticapatri.app.ui.settings.SettingsViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
     initialAppointmentId: Long? = null
 ) {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    var showSplash by remember { mutableStateOf(true) }
 
-    val navItems = listOf(
-        Screen.Agenda to Icons.Default.DateRange,
-        Screen.Clients to Icons.Default.People,
-        Screen.Services to Icons.Default.Spa,
-        Screen.Settings to Icons.Default.Settings
-    )
+    LaunchedEffect(Unit) {
+        delay(1400) // Brief branded loading moment
+        showSplash = false
+    }
 
-    val showNav = currentRoute in navItems.map { it.first.route }
+    Box(modifier = Modifier.fillMaxSize()) {
+        val navController = rememberNavController()
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isExpanded = maxWidth >= 600.dp
+        val navItems = listOf(
+            Screen.Agenda to Icons.Default.DateRange,
+            Screen.Clients to Icons.Default.People,
+            Screen.Services to Icons.Default.Spa,
+            Screen.Settings to Icons.Default.Settings
+        )
 
-        if (isExpanded) {
-            // Adaptive NavigationRail for Tablets & Landscape
-            Row(modifier = Modifier.fillMaxSize()) {
-                if (showNav) {
-                    NavigationRail(
-                        modifier = Modifier.fillMaxHeight()
-                    ) {
-                        navItems.forEach { (screen, icon) ->
-                            NavigationRailItem(
-                                icon = { Icon(icon, contentDescription = screen.title) },
-                                label = { Text(screen.title) },
-                                selected = currentRoute == screen.route,
-                                onClick = {
-                                    navController.navigate(screen.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
+        val showNav = currentRoute in navItems.map { it.first.route }
 
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Agenda.route,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    composable(Screen.Agenda.route) {
-                        val agendaVm: AgendaViewModel = viewModel()
-                        AgendaScreen(
-                            viewModel = agendaVm,
-                            onNavigateToNewAppointment = {
-                                navController.navigate(Screen.NewAppointment.route)
-                            }
-                        )
-                    }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isExpanded = maxWidth >= 600.dp
 
-                    composable(Screen.NewAppointment.route) {
-                        val newAppointmentVm: NewAppointmentViewModel = viewModel()
-                        NewAppointmentScreen(
-                            viewModel = newAppointmentVm,
-                            onNavigateBack = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
-
-                    composable(Screen.Clients.route) {
-                        val clientsVm: ClientsViewModel = viewModel()
-                        ClientsScreen(viewModel = clientsVm)
-                    }
-
-                    composable(Screen.Services.route) {
-                        val servicesVm: ServicesViewModel = viewModel()
-                        ServicesScreen(viewModel = servicesVm)
-                    }
-
-                    composable(Screen.Settings.route) {
-                        val settingsVm: SettingsViewModel = viewModel()
-                        SettingsScreen(viewModel = settingsVm)
-                    }
-                }
-            }
-        } else {
-            // Compact Bottom NavigationBar for Phones
-            Scaffold(
-                bottomBar = {
+            if (isExpanded) {
+                // Adaptive NavigationRail for Tablets & Landscape
+                Row(modifier = Modifier.fillMaxSize()) {
                     if (showNav) {
-                        NavigationBar {
+                        NavigationRail(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.fillMaxHeight()
+                        ) {
                             navItems.forEach { (screen, icon) ->
-                                NavigationBarItem(
+                                NavigationRailItem(
                                     icon = { Icon(icon, contentDescription = screen.title) },
                                     label = { Text(screen.title) },
                                     selected = currentRoute == screen.route,
+                                    colors = NavigationRailItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                    ),
                                     onClick = {
                                         navController.navigate(screen.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -143,49 +97,131 @@ fun MainScreen(
                             }
                         }
                     }
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Agenda.route,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        composable(Screen.Agenda.route) {
+                            val agendaVm: AgendaViewModel = viewModel()
+                            AgendaScreen(
+                                viewModel = agendaVm,
+                                onNavigateToNewAppointment = {
+                                    navController.navigate(Screen.NewAppointment.route)
+                                }
+                            )
+                        }
+
+                        composable(Screen.NewAppointment.route) {
+                            val newAppointmentVm: NewAppointmentViewModel = viewModel()
+                            NewAppointmentScreen(
+                                viewModel = newAppointmentVm,
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable(Screen.Clients.route) {
+                            val clientsVm: ClientsViewModel = viewModel()
+                            ClientsScreen(viewModel = clientsVm)
+                        }
+
+                        composable(Screen.Services.route) {
+                            val servicesVm: ServicesViewModel = viewModel()
+                            ServicesScreen(viewModel = servicesVm)
+                        }
+
+                        composable(Screen.Settings.route) {
+                            val settingsVm: SettingsViewModel = viewModel()
+                            SettingsScreen(viewModel = settingsVm)
+                        }
+                    }
                 }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Agenda.route,
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(Screen.Agenda.route) {
-                        val agendaVm: AgendaViewModel = viewModel()
-                        AgendaScreen(
-                            viewModel = agendaVm,
-                            onNavigateToNewAppointment = {
-                                navController.navigate(Screen.NewAppointment.route)
+            } else {
+                // Compact Bottom NavigationBar for Phones
+                Scaffold(
+                    bottomBar = {
+                        if (showNav) {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ) {
+                                navItems.forEach { (screen, icon) ->
+                                    NavigationBarItem(
+                                        icon = { Icon(icon, contentDescription = screen.title) },
+                                        label = { Text(screen.title, fontWeight = FontWeight.Medium) },
+                                        selected = currentRoute == screen.route,
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                        ),
+                                        onClick = {
+                                            navController.navigate(screen.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Agenda.route,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(Screen.Agenda.route) {
+                            val agendaVm: AgendaViewModel = viewModel()
+                            AgendaScreen(
+                                viewModel = agendaVm,
+                                onNavigateToNewAppointment = {
+                                    navController.navigate(Screen.NewAppointment.route)
+                                }
+                            )
+                        }
 
-                    composable(Screen.NewAppointment.route) {
-                        val newAppointmentVm: NewAppointmentViewModel = viewModel()
-                        NewAppointmentScreen(
-                            viewModel = newAppointmentVm,
-                            onNavigateBack = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
+                        composable(Screen.NewAppointment.route) {
+                            val newAppointmentVm: NewAppointmentViewModel = viewModel()
+                            NewAppointmentScreen(
+                                viewModel = newAppointmentVm,
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
 
-                    composable(Screen.Clients.route) {
-                        val clientsVm: ClientsViewModel = viewModel()
-                        ClientsScreen(viewModel = clientsVm)
-                    }
+                        composable(Screen.Clients.route) {
+                            val clientsVm: ClientsViewModel = viewModel()
+                            ClientsScreen(viewModel = clientsVm)
+                        }
 
-                    composable(Screen.Services.route) {
-                        val servicesVm: ServicesViewModel = viewModel()
-                        ServicesScreen(viewModel = servicesVm)
-                    }
+                        composable(Screen.Services.route) {
+                            val servicesVm: ServicesViewModel = viewModel()
+                            ServicesScreen(viewModel = servicesVm)
+                        }
 
-                    composable(Screen.Settings.route) {
-                        val settingsVm: SettingsViewModel = viewModel()
-                        SettingsScreen(viewModel = settingsVm)
+                        composable(Screen.Settings.route) {
+                            val settingsVm: SettingsViewModel = viewModel()
+                            SettingsScreen(viewModel = settingsVm)
+                        }
                     }
                 }
             }
+        }
+
+        // Branded Splash / Loading Overlay
+        AnimatedVisibility(
+            visible = showSplash,
+            enter = fadeIn(),
+            exit = fadeOut(animationSpec = tween(500))
+        ) {
+            SplashScreen()
         }
     }
 }
