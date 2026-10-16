@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.esteticapatri.app.data.local.AppointmentEntity
 import com.esteticapatri.app.data.local.AppointmentWithDetails
 import com.esteticapatri.app.data.local.DatabaseProvider
-import com.esteticapatri.app.domain.AppointmentUseCases
 import com.esteticapatri.app.domain.CancelAppointment
 import com.esteticapatri.app.domain.GetAgendaAppointments
 import com.esteticapatri.app.domain.RescheduleAppointment
