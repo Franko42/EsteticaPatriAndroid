@@ -1,5 +1,9 @@
 package com.esteticapatri.app.ui.navigation
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -10,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -35,77 +40,151 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val bottomNavItems = listOf(
+    val navItems = listOf(
         Screen.Agenda to Icons.Default.DateRange,
         Screen.Clients to Icons.Default.People,
         Screen.Services to Icons.Default.Spa,
         Screen.Settings to Icons.Default.Settings
     )
 
-    val showBottomBar = currentRoute in bottomNavItems.map { it.first.route }
+    val showNav = currentRoute in navItems.map { it.first.route }
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    bottomNavItems.forEach { (screen, icon) ->
-                        NavigationBarItem(
-                            icon = { Icon(icon, contentDescription = screen.title) },
-                            label = { Text(screen.title) },
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isExpanded = maxWidth >= 600.dp
+
+        if (isExpanded) {
+            // Adaptive NavigationRail for Tablets & Landscape
+            Row(modifier = Modifier.fillMaxSize()) {
+                if (showNav) {
+                    NavigationRail(
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        navItems.forEach { (screen, icon) ->
+                            NavigationRailItem(
+                                icon = { Icon(icon, contentDescription = screen.title) },
+                                label = { Text(screen.title) },
+                                selected = currentRoute == screen.route,
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
                                 }
+                            )
+                        }
+                    }
+                }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Agenda.route,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    composable(Screen.Agenda.route) {
+                        val agendaVm: AgendaViewModel = viewModel()
+                        AgendaScreen(
+                            viewModel = agendaVm,
+                            onNavigateToNewAppointment = {
+                                navController.navigate(Screen.NewAppointment.route)
                             }
                         )
                     }
+
+                    composable(Screen.NewAppointment.route) {
+                        val newAppointmentVm: NewAppointmentViewModel = viewModel()
+                        NewAppointmentScreen(
+                            viewModel = newAppointmentVm,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+
+                    composable(Screen.Clients.route) {
+                        val clientsVm: ClientsViewModel = viewModel()
+                        ClientsScreen(viewModel = clientsVm)
+                    }
+
+                    composable(Screen.Services.route) {
+                        val servicesVm: ServicesViewModel = viewModel()
+                        ServicesScreen(viewModel = servicesVm)
+                    }
+
+                    composable(Screen.Settings.route) {
+                        val settingsVm: SettingsViewModel = viewModel()
+                        SettingsScreen(viewModel = settingsVm)
+                    }
                 }
             }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Agenda.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Agenda.route) {
-                val agendaVm: AgendaViewModel = viewModel()
-                AgendaScreen(
-                    viewModel = agendaVm,
-                    onNavigateToNewAppointment = {
-                        navController.navigate(Screen.NewAppointment.route)
+        } else {
+            // Compact Bottom NavigationBar for Phones
+            Scaffold(
+                bottomBar = {
+                    if (showNav) {
+                        NavigationBar {
+                            navItems.forEach { (screen, icon) ->
+                                NavigationBarItem(
+                                    icon = { Icon(icon, contentDescription = screen.title) },
+                                    label = { Text(screen.title) },
+                                    selected = currentRoute == screen.route,
+                                    onClick = {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
-                )
-            }
-
-            composable(Screen.NewAppointment.route) {
-                val newAppointmentVm: NewAppointmentViewModel = viewModel()
-                NewAppointmentScreen(
-                    viewModel = newAppointmentVm,
-                    onNavigateBack = {
-                        navController.popBackStack()
+                }
+            ) { innerPadding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.Agenda.route,
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    composable(Screen.Agenda.route) {
+                        val agendaVm: AgendaViewModel = viewModel()
+                        AgendaScreen(
+                            viewModel = agendaVm,
+                            onNavigateToNewAppointment = {
+                                navController.navigate(Screen.NewAppointment.route)
+                            }
+                        )
                     }
-                )
-            }
 
-            composable(Screen.Clients.route) {
-                val clientsVm: ClientsViewModel = viewModel()
-                ClientsScreen(viewModel = clientsVm)
-            }
+                    composable(Screen.NewAppointment.route) {
+                        val newAppointmentVm: NewAppointmentViewModel = viewModel()
+                        NewAppointmentScreen(
+                            viewModel = newAppointmentVm,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
 
-            composable(Screen.Services.route) {
-                val servicesVm: ServicesViewModel = viewModel()
-                ServicesScreen(viewModel = servicesVm)
-            }
+                    composable(Screen.Clients.route) {
+                        val clientsVm: ClientsViewModel = viewModel()
+                        ClientsScreen(viewModel = clientsVm)
+                    }
 
-            composable(Screen.Settings.route) {
-                val settingsVm: SettingsViewModel = viewModel()
-                SettingsScreen(viewModel = settingsVm)
+                    composable(Screen.Services.route) {
+                        val servicesVm: ServicesViewModel = viewModel()
+                        ServicesScreen(viewModel = servicesVm)
+                    }
+
+                    composable(Screen.Settings.route) {
+                        val settingsVm: SettingsViewModel = viewModel()
+                        SettingsScreen(viewModel = settingsVm)
+                    }
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,8 +22,10 @@ import com.esteticapatri.app.data.local.ClientEntity
 import com.esteticapatri.app.data.local.ServiceEntity
 import com.esteticapatri.app.integrations.WhatsAppHelper
 import com.esteticapatri.app.integrations.WhatsAppMessageBuilder
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -54,6 +57,8 @@ fun NewAppointmentScreen(
 
     var showClientDropdown by remember { mutableStateOf(false) }
     var showServiceDropdown by remember { mutableStateOf(false) }
+    var showDatePickerDialog by remember { mutableStateOf(false) }
+    var showTimePickerDialog by remember { mutableStateOf(false) }
 
     val selectedClient = clients.find { it.id == selectedClientId }
     val selectedService = services.find { it.id == selectedServiceId }
@@ -63,7 +68,10 @@ fun NewAppointmentScreen(
             TopAppBar(
                 title = { Text("Agendar Turno", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
@@ -160,44 +168,79 @@ fun NewAppointmentScreen(
             // Date & Time Selector
             Text("3. Fecha y Horario *", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 
-            // Date Quick Row
-            val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
+            val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", Locale("es", "ES"))
+            val formattedDateText = selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() }
+
+            OutlinedCard(
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Date row with custom picker button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Fecha: ${selectedDate.format(dateFormatter)}", fontWeight = FontWeight.Medium)
-                        Row {
-                            TextButton(onClick = { viewModel.selectDate(LocalDate.now()) }) {
-                                Text("Hoy")
-                            }
-                            TextButton(onClick = { viewModel.selectDate(LocalDate.now().plusDays(1)) }) {
-                                Text("Mañana")
-                            }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Fecha de turno", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(formattedDateText, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        OutlinedButton(
+                            onClick = { showDatePickerDialog = true },
+                            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                        ) {
+                            Icon(Icons.Default.EditCalendar, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Cambiar")
                         }
                     }
 
-                    Spacer(Modifier.height(8.dp))
+                    // Quick Date Chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        FilterChip(
+                            selected = selectedDate == LocalDate.now(),
+                            onClick = { viewModel.selectDate(LocalDate.now()) },
+                            label = { Text("Hoy") },
+                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                        )
+                        FilterChip(
+                            selected = selectedDate == LocalDate.now().plusDays(1),
+                            onClick = { viewModel.selectDate(LocalDate.now().plusDays(1)) },
+                            label = { Text("Mañana") },
+                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                        )
+                        FilterChip(
+                            selected = selectedDate == LocalDate.now().plusDays(7),
+                            onClick = { viewModel.selectDate(LocalDate.now().plusDays(7)) },
+                            label = { Text("+7 días") },
+                            modifier = Modifier.defaultMinSize(minHeight = 40.dp)
+                        )
+                    }
 
-                    // Time Row
+                    HorizontalDivider()
+
+                    // Time Row with full picker
                     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Hora: ${selectedTime.format(timeFormatter)} hs", fontWeight = FontWeight.Medium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            listOf(9, 11, 14, 16, 18).forEach { hour ->
-                                FilterChip(
-                                    selected = selectedTime.hour == hour && selectedTime.minute == 0,
-                                    onClick = { viewModel.selectTime(LocalTime.of(hour, 0)) },
-                                    label = { Text("%02d:00".format(hour)) }
-                                )
-                            }
+                        Column {
+                            Text("Hora de inicio", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${selectedTime.format(timeFormatter)} hs", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                        OutlinedButton(
+                            onClick = { showTimePickerDialog = true },
+                            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                        ) {
+                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Elegir hora")
                         }
                     }
                 }
@@ -211,12 +254,13 @@ fun NewAppointmentScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Duración estimada: ${selectedService.durationMinutes} min")
+                        Text("Duración estimada: ${selectedService.durationMinutes} min", style = MaterialTheme.typography.bodyMedium)
                         selectedService.priceMinorUnits?.let { priceUnits ->
-                            Text("Total: $ ${priceUnits / 100}", fontWeight = FontWeight.Bold)
+                            Text("Total: $ ${priceUnits / 100}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -227,7 +271,7 @@ fun NewAppointmentScreen(
             OutlinedTextField(
                 value = notes,
                 onValueChange = { viewModel.onNotesChange(it) },
-                placeholder = { Text("Ej: Trae diseño de uñas / piel sensible") },
+                placeholder = { Text("Ej: Trae diseño propio / alergia a productos") },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -245,6 +289,94 @@ fun NewAppointmentScreen(
                 Text("Confirmar y Agendar Turno", style = MaterialTheme.typography.titleMedium)
             }
         }
+    }
+
+    // Material 3 Date Picker Dialog
+    if (showDatePickerDialog) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePickerDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val local = Instant.ofEpochMilli(millis).atZone(ZoneId.of("UTC")).toLocalDate()
+                            viewModel.selectDate(local)
+                        }
+                        showDatePickerDialog = false
+                    }
+                ) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePickerDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    // Time Selection Dialog (supporting 08:00 to 20:45 in 15-minute increments)
+    if (showTimePickerDialog) {
+        var hourSelection by remember { mutableStateOf(selectedTime.hour) }
+        var minuteSelection by remember { mutableStateOf(selectedTime.minute) }
+
+        AlertDialog(
+            onDismissRequest = { showTimePickerDialog = false },
+            title = { Text("Seleccionar Horario", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Hora: %02d:00".format(hourSelection), fontWeight = FontWeight.SemiBold)
+                    // Common hours row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf(8, 9, 10, 11, 14, 16, 18, 20).forEach { h ->
+                            FilterChip(
+                                selected = hourSelection == h,
+                                onClick = { hourSelection = h },
+                                label = { Text("%02d".format(h)) }
+                            )
+                        }
+                    }
+
+                    Text("Minutos: %02d".format(minuteSelection), fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(0, 15, 30, 45).forEach { m ->
+                            FilterChip(
+                                selected = minuteSelection == m,
+                                onClick = { minuteSelection = m },
+                                label = { Text(":%02d".format(m)) }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.selectTime(LocalTime.of(hourSelection, minuteSelection))
+                        showTimePickerDialog = false
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePickerDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     // Success Dialog with WhatsApp option

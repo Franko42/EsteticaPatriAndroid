@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.esteticapatri.app.data.local.WorkingHoursEntity
@@ -103,7 +105,7 @@ fun SettingsScreen(
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "Todos los datos de clientas y turnos permanecen únicamente en este dispositivo. No hay servidores externos ni internet.",
+                                "Todos los datos de clientas y turnos permanecen únicamente en este dispositivo. Sin servidores externos ni permisos de internet.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
@@ -128,7 +130,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Exportá o restaurá tus datos usando Storage Access Framework de manera segura. Cada restauración genera automáticamente un respaldo preventivo.",
+                            "Exportá o restaurá tus datos usando Storage Access Framework de manera segura. Cada restauración genera automáticamente un respaldo preventivo de tus datos vigentes.",
                             style = MaterialTheme.typography.bodyMedium
                         )
 
@@ -138,7 +140,9 @@ fun SettingsScreen(
                         ) {
                             Button(
                                 onClick = { showCreateBackupDialog = true },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .defaultMinSize(minHeight = 48.dp)
                             ) {
                                 Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -150,7 +154,9 @@ fun SettingsScreen(
                                     val dateStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
                                     exportFileLauncher.launch("estetica_patri_backup_$dateStr.json")
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .defaultMinSize(minHeight = 48.dp)
                             ) {
                                 Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -160,7 +166,9 @@ fun SettingsScreen(
 
                         OutlinedButton(
                             onClick = { importFileLauncher.launch(arrayOf("application/json", "*/*")) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 48.dp)
                         ) {
                             Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
@@ -233,8 +241,12 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Se guardará una copia instantánea y consistente de todas las clientas, tratamientos y turnos.")
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                    ) {
                         Checkbox(checked = usePassword, onCheckedChange = { usePassword = it })
+                        Spacer(Modifier.width(6.dp))
                         Text("Cifrar con contraseña (AES-GCM)")
                     }
                     if (usePassword) {
@@ -254,13 +266,17 @@ fun SettingsScreen(
                         val pass = if (usePassword) pwd.takeIf { it.isNotBlank() } else null
                         viewModel.createBackup(pass)
                         showCreateBackupDialog = false
-                    }
+                    },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text("Crear ahora")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateBackupDialog = false }) {
+                TextButton(
+                    onClick = { showCreateBackupDialog = false },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                ) {
                     Text("Cancelar")
                 }
             }
@@ -279,9 +295,13 @@ fun SettingsScreen(
             title = { Text("Confirmar Restauración", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("¡Atención! Se verificará el checksum SHA-256 y la compatibilidad antes de restaurar. Además se generará un respaldo preventivo de tus datos actuales.")
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Se verificará el checksum SHA-256 y la integridad antes de reemplazar datos. Además, se creará automáticamente un respaldo preventivo de tus datos actuales.")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                    ) {
                         Checkbox(checked = isEncrypted, onCheckedChange = { isEncrypted = it })
+                        Spacer(Modifier.width(6.dp))
                         Text("El archivo está cifrado con contraseña")
                     }
                     if (isEncrypted) {
@@ -302,7 +322,8 @@ fun SettingsScreen(
                         viewModel.restoreBackup(pendingRestoreUri!!, pass)
                         showRestorePasswordDialog = false
                         pendingRestoreUri = null
-                    }
+                    },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text("Restaurar")
                 }
@@ -312,7 +333,8 @@ fun SettingsScreen(
                     onClick = {
                         showRestorePasswordDialog = false
                         pendingRestoreUri = null
-                    }
+                    },
+                    modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text("Cancelar")
                 }
@@ -345,13 +367,13 @@ private fun WorkingHoursRow(
     Card(
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (entity.enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = if (entity.enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -374,7 +396,10 @@ private fun WorkingHoursRow(
 
             Switch(
                 checked = entity.enabled,
-                onCheckedChange = onToggle
+                onCheckedChange = onToggle,
+                modifier = Modifier.semantics {
+                    contentDescription = "Activar o desactivar horario para $dayName"
+                }
             )
         }
     }

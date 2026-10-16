@@ -1,7 +1,6 @@
 package com.esteticapatri.app.ui.agenda
 
 import android.content.Context
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,15 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.esteticapatri.app.data.local.AppointmentEntity
 import com.esteticapatri.app.data.local.AppointmentWithDetails
 import com.esteticapatri.app.integrations.WhatsAppHelper
 import com.esteticapatri.app.integrations.WhatsAppMessageBuilder
-import com.esteticapatri.app.ui.theme.StatusCancelled
-import com.esteticapatri.app.ui.theme.StatusCompleted
-import com.esteticapatri.app.ui.theme.StatusNoShow
-import com.esteticapatri.app.ui.theme.StatusScheduled
+import com.esteticapatri.app.ui.theme.StatusColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -44,6 +39,9 @@ fun AgendaScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var appointmentToCancel by remember { mutableStateOf<AppointmentWithDetails?>(null) }
+    var appointmentToNoShow by remember { mutableStateOf<AppointmentWithDetails?>(null) }
+
     LaunchedEffect(uiMessage) {
         uiMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -60,7 +58,10 @@ fun AgendaScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
-                    TextButton(onClick = { viewModel.onToday() }) {
+                    TextButton(
+                        onClick = { viewModel.onToday() },
+                        modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                    ) {
                         Text("Hoy", fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -70,7 +71,8 @@ fun AgendaScreen(
             FloatingActionButton(
                 onClick = onNavigateToNewAppointment,
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(56.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nuevo turno")
             }
@@ -111,8 +113,11 @@ fun AgendaScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.outline
                         )
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedButton(onClick = onNavigateToNewAppointment) {
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = onNavigateToNewAppointment,
+                            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                        ) {
                             Text("Agendar un nuevo turno")
                         }
                     }
@@ -128,13 +133,68 @@ fun AgendaScreen(
                             item = item,
                             context = context,
                             onComplete = { viewModel.complete(item.appointment.id) },
-                            onCancel = { viewModel.cancel(item.appointment.id) },
-                            onNoShow = { viewModel.markNoShow(item.appointment.id) }
+                            onRequestCancel = { appointmentToCancel = item },
+                            onRequestNoShow = { appointmentToNoShow = item }
                         )
                     }
                 }
             }
         }
+    }
+
+    // Confirmation dialog for Cancel
+    appointmentToCancel?.let { item ->
+        AlertDialog(
+            onDismissRequest = { appointmentToCancel = null },
+            icon = { Icon(Icons.Default.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("¿Cancelar este turno?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Se cancelará el turno de ${item.client.name} para ${item.service.name}. El registro permanecerá en el historial como Cancelado y liberará el horario.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.cancel(item.appointment.id)
+                        appointmentToCancel = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Confirmar cancelación")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appointmentToCancel = null }) {
+                    Text("Volver")
+                }
+            }
+        )
+    }
+
+    // Confirmation dialog for No-Show
+    appointmentToNoShow?.let { item ->
+        AlertDialog(
+            onDismissRequest = { appointmentToNoShow = null },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = StatusColors.noShow()) },
+            title = { Text("¿Marcar que no asistió?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("El turno de ${item.client.name} se marcará como No Asistió.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.markNoShow(item.appointment.id)
+                        appointmentToNoShow = null
+                    }
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appointmentToNoShow = null }) {
+                    Text("Volver")
+                }
+            }
+        )
     }
 }
 
@@ -154,7 +214,10 @@ private fun DateNavigationHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPreviousDay) {
+        IconButton(
+            onClick = onPreviousDay,
+            modifier = Modifier.size(48.dp)
+        ) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Día anterior")
         }
         Text(
@@ -162,7 +225,10 @@ private fun DateNavigationHeader(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
-        IconButton(onClick = onNextDay) {
+        IconButton(
+            onClick = onNextDay,
+            modifier = Modifier.size(48.dp)
+        ) {
             Icon(Icons.Default.ArrowForward, contentDescription = "Día siguiente")
         }
     }
@@ -173,8 +239,8 @@ private fun AppointmentItemCard(
     item: AppointmentWithDetails,
     context: Context,
     onComplete: () -> Unit,
-    onCancel: () -> Unit,
-    onNoShow: () -> Unit
+    onRequestCancel: () -> Unit,
+    onRequestNoShow: () -> Unit
 ) {
     val zone = ZoneId.systemDefault()
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
@@ -185,19 +251,18 @@ private fun AppointmentItemCard(
     val dateStr = Instant.ofEpochMilli(item.appointment.startEpochMillis).atZone(zone).format(dateFormatter)
 
     val (statusLabel, statusColor) = when (item.appointment.status) {
-        AppointmentEntity.SCHEDULED -> "Programado" to StatusScheduled
-        AppointmentEntity.COMPLETED -> "Completado" to StatusCompleted
-        AppointmentEntity.CANCELLED -> "Cancelado" to StatusCancelled
-        AppointmentEntity.NO_SHOW -> "No asistió" to StatusNoShow
-        else -> item.appointment.status to Color.Gray
+        AppointmentEntity.SCHEDULED -> "Programado" to StatusColors.scheduled()
+        AppointmentEntity.COMPLETED -> "Completado" to StatusColors.completed()
+        AppointmentEntity.CANCELLED -> "Cancelado" to StatusColors.cancelled()
+        AppointmentEntity.NO_SHOW -> "No asistió" to StatusColors.noShow()
+        else -> item.appointment.status to MaterialTheme.colorScheme.outline
     }
-
-    var showActionMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -210,12 +275,12 @@ private fun AppointmentItemCard(
                     Icon(
                         Icons.Default.Schedule,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        "$startTime - $endTime",
+                        "$startTime - $endTime hs",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -230,14 +295,14 @@ private fun AppointmentItemCard(
                     Text(
                         text = statusLabel,
                         color = statusColor,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             // Client Name & Phone
             Text(
@@ -246,6 +311,7 @@ private fun AppointmentItemCard(
                 fontWeight = FontWeight.SemiBold
             )
             item.client.phone?.let { phone ->
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = "Tel: $phone",
                     style = MaterialTheme.typography.bodyMedium,
@@ -253,35 +319,66 @@ private fun AppointmentItemCard(
                 )
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
 
-            // Service Name & Price
-            val priceStr = item.service.priceMinorUnits?.let { "$ ${it / 100}" } ?: ""
-            Text(
-                text = "${item.service.name} (${item.service.durationMinutes} min) $priceStr",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
+            // Service Name, Duration & Price with real vector icons
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Spa,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "${item.service.name} (${item.service.durationMinutes} min)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                item.service.priceMinorUnits?.let { priceUnits ->
+                    Spacer(Modifier.width(12.dp))
+                    Icon(
+                        Icons.Default.Payments,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "$ ${priceUnits / 100}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
             // Notes
             item.appointment.notes?.let { notes ->
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "Nota: $notes",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Nota: $notes",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Action Buttons
+            // Action Buttons with >= 48dp touch targets and 8dp spacing
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // WhatsApp Button (only if client has phone)
+                // WhatsApp Button
                 item.client.phone?.let { phone ->
                     IconButton(
                         onClick = {
@@ -292,7 +389,8 @@ private fun AppointmentItemCard(
                                 formattedTime = startTime
                             )
                             WhatsAppHelper.launchChat(context, phone, msg)
-                        }
+                        },
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             Icons.Default.Send,
@@ -300,30 +398,42 @@ private fun AppointmentItemCard(
                             tint = Color(0xFF25D366)
                         )
                     }
+                    Spacer(Modifier.width(8.dp))
                 }
 
                 if (item.appointment.status == AppointmentEntity.SCHEDULED) {
-                    IconButton(onClick = onComplete) {
+                    IconButton(
+                        onClick = onComplete,
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             Icons.Default.CheckCircle,
                             contentDescription = "Marcar completado",
-                            tint = StatusCompleted
+                            tint = StatusColors.completed()
                         )
                     }
+                    Spacer(Modifier.width(8.dp))
 
-                    IconButton(onClick = onNoShow) {
+                    IconButton(
+                        onClick = onRequestNoShow,
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             Icons.Default.Warning,
                             contentDescription = "Marcar no asistió",
-                            tint = StatusNoShow
+                            tint = StatusColors.noShow()
                         )
                     }
+                    Spacer(Modifier.width(8.dp))
 
-                    IconButton(onClick = onCancel) {
+                    IconButton(
+                        onClick = onRequestCancel,
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             Icons.Default.Cancel,
                             contentDescription = "Cancelar turno",
-                            tint = StatusCancelled
+                            tint = StatusColors.cancelled()
                         )
                     }
                 }

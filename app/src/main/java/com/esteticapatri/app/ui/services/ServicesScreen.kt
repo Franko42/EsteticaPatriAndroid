@@ -6,10 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +27,7 @@ fun ServicesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var serviceToEdit by remember { mutableStateOf<ServiceEntity?>(null) }
+    var serviceToDelete by remember { mutableStateOf<ServiceEntity?>(null) }
 
     LaunchedEffect(uiMessage) {
         uiMessage?.let {
@@ -41,7 +39,7 @@ fun ServicesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Servicios y Tratamientos", fontWeight = FontWeight.Bold) },
+                title = { Text("Tratamientos y Servicios", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -52,9 +50,10 @@ fun ServicesScreen(
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(56.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Nuevo servicio")
+                Icon(Icons.Default.Add, contentDescription = "Nuevo tratamiento")
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -81,7 +80,10 @@ fun ServicesScreen(
                         color = MaterialTheme.colorScheme.outline
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = { showAddDialog = true }) {
+                    Button(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                    ) {
                         Text("Agregar tratamiento")
                     }
                 }
@@ -98,7 +100,7 @@ fun ServicesScreen(
                     ServiceItemCard(
                         service = service,
                         onEditClick = { serviceToEdit = service },
-                        onDeleteClick = { viewModel.removeService(service.id) }
+                        onDeleteClick = { serviceToDelete = service }
                     )
                 }
             }
@@ -141,6 +143,34 @@ fun ServicesScreen(
             }
         )
     }
+
+    // Confirmation dialog before deleting/deactivating a service
+    serviceToDelete?.let { service ->
+        AlertDialog(
+            onDismissRequest = { serviceToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("¿Desactivar este tratamiento?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Se desactivará ${service.name}. Los turnos históricos asociados se mantendrán sin cambios.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.removeService(service.id)
+                        serviceToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Desactivar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { serviceToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -152,6 +182,7 @@ private fun ServiceItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -167,17 +198,31 @@ private fun ServiceItemCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "⏱ ${service.durationMinutes} minutos",
+                        text = "${service.durationMinutes} minutos",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     service.priceMinorUnits?.let { priceUnits ->
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(14.dp))
+                        Icon(
+                            Icons.Default.Payments,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(4.dp))
                         Text(
-                            text = "💵 $ ${priceUnits / 100}",
+                            text = "$ ${priceUnits / 100}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
@@ -194,12 +239,19 @@ private fun ServiceItemCard(
                 }
             }
 
-            Row {
-                IconButton(onClick = onEditClick) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.secondary)
                 }
-                IconButton(onClick = onDeleteClick) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                Spacer(Modifier.width(4.dp))
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Desactivar", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -236,7 +288,7 @@ private fun ServiceFormDialog(
                 OutlinedTextField(
                     value = duration,
                     onValueChange = { duration = it.filter(Char::isDigit) },
-                    label = { Text("Duración en minutos (ej: 60) *") },
+                    label = { Text("Duración en minutos (ej: 45) *") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

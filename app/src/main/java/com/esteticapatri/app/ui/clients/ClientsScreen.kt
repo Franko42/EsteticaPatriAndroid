@@ -30,6 +30,7 @@ fun ClientsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var clientToEdit by remember { mutableStateOf<ClientEntity?>(null) }
+    var clientToDelete by remember { mutableStateOf<ClientEntity?>(null) }
 
     LaunchedEffect(uiMessage) {
         uiMessage?.let {
@@ -52,7 +53,8 @@ fun ClientsScreen(
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(56.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Nueva clienta")
             }
@@ -75,7 +77,10 @@ fun ClientsScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                        IconButton(
+                            onClick = { viewModel.onSearchQueryChange("") },
+                            modifier = Modifier.size(48.dp)
+                        ) {
                             Icon(Icons.Default.Clear, contentDescription = "Limpiar búsqueda")
                         }
                     }
@@ -114,7 +119,7 @@ fun ClientsScreen(
                                 )
                             },
                             onEditClick = { clientToEdit = client },
-                            onDeleteClick = { viewModel.removeClient(client.id) }
+                            onDeleteClick = { clientToDelete = client }
                         )
                     }
                 }
@@ -149,6 +154,34 @@ fun ClientsScreen(
             }
         )
     }
+
+    // Confirmation dialog before deleting/deactivating a client
+    clientToDelete?.let { client ->
+        AlertDialog(
+            onDismissRequest = { clientToDelete = null },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("¿Dar de baja a esta clienta?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Se desactivará a ${client.name}. Sus turnos históricos se mantendrán protegidos pero ya no aparecerá en la lista activa.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.removeClient(client.id)
+                        clientToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Dar de baja")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clientToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -161,6 +194,7 @@ private fun ClientItemCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -196,18 +230,29 @@ private fun ClientItemCard(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 client.phone?.let { phone ->
-                    IconButton(onClick = { onWhatsAppClick(phone) }) {
+                    IconButton(
+                        onClick = { onWhatsAppClick(phone) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
                         Icon(
                             Icons.Default.Send,
                             contentDescription = "Contactar por WhatsApp",
                             tint = Color(0xFF25D366)
                         )
                     }
+                    Spacer(Modifier.width(4.dp))
                 }
-                IconButton(onClick = onEditClick) {
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.secondary)
                 }
-                IconButton(onClick = onDeleteClick) {
+                Spacer(Modifier.width(4.dp))
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(Icons.Default.Delete, contentDescription = "Dar de baja", tint = MaterialTheme.colorScheme.error)
                 }
             }
