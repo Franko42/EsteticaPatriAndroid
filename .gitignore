@@ -10,3 +10,4 @@ captures/
 secrets.properties
 .env
 .github/skills/impeccable/scripts/bin/
+preview/
