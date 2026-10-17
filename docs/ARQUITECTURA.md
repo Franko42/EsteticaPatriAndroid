@@ -26,6 +26,9 @@
   - `AppointmentReminderWorker`: ejecución diferida con WorkManager.
   - `WorkManagerReminderScheduler`: encolamiento único y cancelación de avisos.
   - `BootReceiver` y `RescheduleRemindersWorker`: reprogramación automática de turnos pendientes tras el reinicio del teléfono.
+- `updater/`:
+  - `AppUpdateInfo`: Modelo de metadatos de versión y enlace de descarga del APK.
+  - `AppUpdateManager`: Gestor nativo de auto-actualización que consulta GitHub Releases API (`Franko42/EsteticaPatriAndroid`), compara versiones semánticas, descarga el APK en streaming hacia la caché interna y dispara el instalador nativo del sistema mediante `FileProvider` (`ACTION_VIEW`).
 - `integrations/`:
   - `WhatsAppMessageBuilder`: generador de URLs `https://wa.me/` y plantillas de recordatorio, confirmación, reprogramación y cancelación.
   - `WhatsAppHelper`: apertura del chat externo para revisión y envío manual.

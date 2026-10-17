@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 470" role="img" aria-labelledby="t d">
+<title id="t">Paleta de colores y tipografía de la marca</title>
+<desc id="d">Paleta rosa, rosa claro, negro profundo, marfil cálido y rosa suave. Tipografía recomendada: Montserrat.</desc>
+<rect width="1120" height="470" rx="24" fill="#FFFFFF"/>
+<text x="54" y="62" font-family="Montserrat, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="1" fill="#111111">IDENTIDAD VISUAL</text>
+<text x="54" y="94" font-family="Montserrat, Arial, sans-serif" font-size="15" fill="#68636A">Paleta sugerida · valores HEX listos para la web y la app</text>
+
+      <rect x="54" y="130" width="190" height="112" rx="18" fill="#FF9CAC" stroke="#E7E1E1" stroke-width="1"/>
+      <text x="54" y="272" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#111111">Rosa principal</text>
+      <text x="54" y="300" font-family="Montserrat, Arial, sans-serif" font-size="18" fill="#111111">#FF9CAC</text>
+      <text x="54" y="330" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Marca y elementos destacados</text>
+    
+      <rect x="270" y="130" width="190" height="112" rx="18" fill="#FFD6DC" stroke="#E7E1E1" stroke-width="1"/>
+      <text x="270" y="272" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#111111">Rosa claro</text>
+      <text x="270" y="300" font-family="Montserrat, Arial, sans-serif" font-size="18" fill="#111111">#FFD6DC</text>
+      <text x="270" y="330" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Fondos suaves y superficies</text>
+    
+      <rect x="486" y="130" width="190" height="112" rx="18" fill="#111111" stroke="#E7E1E1" stroke-width="1"/>
+      <text x="486" y="272" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#111111">Negro profundo</text>
+      <text x="486" y="300" font-family="Montserrat, Arial, sans-serif" font-size="18" fill="#111111">#111111</text>
+      <text x="486" y="330" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Logo, títulos y texto principal</text>
+    
+      <rect x="702" y="130" width="190" height="112" rx="18" fill="#F7F4F2" stroke="#E7E1E1" stroke-width="1"/>
+      <text x="702" y="272" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#111111">Marfil cálido</text>
+      <text x="702" y="300" font-family="Montserrat, Arial, sans-serif" font-size="18" fill="#111111">#F7F4F2</text>
+      <text x="702" y="330" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Fondo alternativo</text>
+    
+      <rect x="918" y="130" width="190" height="112" rx="18" fill="#E89CB0" stroke="#E7E1E1" stroke-width="1"/>
+      <text x="918" y="272" font-family="Montserrat, Arial, sans-serif" font-size="18" font-weight="600" fill="#111111">Rosa suave</text>
+      <text x="918" y="300" font-family="Montserrat, Arial, sans-serif" font-size="18" fill="#111111">#E89CB0</text>
+      <text x="918" y="330" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Acentos secundarios</text>
+    
+<line x1="54" y1="365" x2="1066" y2="365" stroke="#E7E1E1"/>
+<text x="54" y="408" font-family="Montserrat, Arial, sans-serif" font-size="30" font-weight="700" fill="#111111">Montserrat</text>
+<text x="330" y="404" font-family="Montserrat, Arial, sans-serif" font-size="16" fill="#111111">Títulos: SemiBold / 600</text>
+<text x="600" y="404" font-family="Montserrat, Arial, sans-serif" font-size="16" fill="#111111">Texto y botones: Regular / 400–500</text>
+<text x="54" y="442" font-family="Montserrat, Arial, sans-serif" font-size="13" fill="#68636A">Alternativa de sistema: Arial. Para producción, cargar Montserrat desde archivos locales.</text>
+</svg>

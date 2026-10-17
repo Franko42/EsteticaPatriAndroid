@@ -41,13 +41,13 @@ class NewAppointmentViewModel(application: Application) : AndroidViewModel(appli
 
     val clients: StateFlow<List<ClientEntity>> = getClients().stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 
     val services: StateFlow<List<ServiceEntity>> = getServices().stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 

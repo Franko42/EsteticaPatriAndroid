@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +33,9 @@ fun SettingsScreen(
     val workingHours by viewModel.workingHours.collectAsState()
     val localBackups by viewModel.localBackups.collectAsState()
     val uiMessage by viewModel.uiMessage.collectAsState()
+    val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
+    val updateInfo by viewModel.updateInfo.collectAsState()
+    val downloadProgress by viewModel.downloadProgress.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var passwordForBackup by remember { mutableStateOf<String?>(null) }
@@ -80,6 +84,83 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Actualizaciones del Sistema
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.SystemUpdate,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Actualizaciones",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    "v${viewModel.updateManager.getCurrentVersionName()}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        Text(
+                            "Las actualizaciones se verifican y descargan directamente desde GitHub Releases sin requerir tiendas externas ni intermediarios.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        OutlinedButton(
+                            onClick = { viewModel.checkForUpdates(userInitiated = true) },
+                            enabled = !isCheckingUpdate && downloadProgress == null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 44.dp)
+                        ) {
+                            if (isCheckingUpdate) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Buscando en GitHub...")
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Buscar actualizaciones")
+                            }
+                        }
+                    }
+                }
+            }
+
             // Offline & Privacy Banner
             item {
                 Card(
@@ -99,13 +180,13 @@ fun SettingsScreen(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "100% Offline y Privado",
+                                "Privacidad y Datos Locales",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "Todos los datos de clientas y turnos permanecen únicamente en este dispositivo. Sin servidores externos ni permisos de internet.",
+                                "Todos los datos de clientas y turnos se almacenan de forma 100% local en este dispositivo. La conexión a internet se utiliza de manera exclusiva y aislada para buscar e instalar actualizaciones del sistema desde GitHub.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
@@ -337,6 +418,78 @@ fun SettingsScreen(
                     modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                 ) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    val currentUpdate = updateInfo
+    if (currentUpdate != null && currentUpdate.isUpdateAvailable) {
+        AlertDialog(
+            onDismissRequest = {
+                if (downloadProgress == null) viewModel.dismissUpdateDialog()
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.SystemUpdate,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Nueva Versión Disponible",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Versión: ${currentUpdate.latestVersion} (Actual: v${currentUpdate.currentVersion})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = currentUpdate.releaseNotes,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    val progress = downloadProgress
+                    if (progress != null) {
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                        )
+                        Text(
+                            text = if (progress >= 1f) "Abriendo instalador del sistema..." else "Descargando: ${(progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.downloadAndInstallUpdate(currentUpdate) },
+                    enabled = downloadProgress == null
+                ) {
+                    Text(if (downloadProgress != null) "Descargando..." else "Actualizar ahora")
+                }
+            },
+            dismissButton = {
+                if (downloadProgress == null) {
+                    TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
+                        Text("Más tarde")
+                    }
                 }
             }
         )

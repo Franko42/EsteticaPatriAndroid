@@ -8,6 +8,8 @@ import com.esteticapatri.app.backup.BackupManager
 import com.esteticapatri.app.data.local.DatabaseProvider
 import com.esteticapatri.app.data.local.WorkingHoursEntity
 import com.esteticapatri.app.domain.WorkingHoursUseCases
+import com.esteticapatri.app.updater.AppUpdateInfo
+import com.esteticapatri.app.updater.AppUpdateManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,12 +23,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val db = DatabaseProvider.getDatabase(application)
     private val workingHoursUseCases = WorkingHoursUseCases(db.workingHoursDao())
     val backupManager = BackupManager(application, db)
+    val updateManager = AppUpdateManager(application)
 
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage.asStateFlow()
 
     private val _localBackups = MutableStateFlow<List<File>>(emptyList())
     val localBackups: StateFlow<List<File>> = _localBackups.asStateFlow()
+
+    private val _isCheckingUpdate = MutableStateFlow(false)
+    val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate.asStateFlow()
+
+    private val _updateInfo = MutableStateFlow<AppUpdateInfo?>(null)
+    val updateInfo: StateFlow<AppUpdateInfo?> = _updateInfo.asStateFlow()
+
+    private val _downloadProgress = MutableStateFlow<Float?>(null)
+    val downloadProgress: StateFlow<Float?> = _downloadProgress.asStateFlow()
 
     val workingHours: StateFlow<List<WorkingHoursEntity>> = workingHoursUseCases.observeWorkingHours().stateIn(
         scope = viewModelScope,
@@ -38,6 +50,54 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             workingHoursUseCases.getOrInitializeDefaults()
             refreshLocalBackups()
+        }
+    }
+
+    fun checkForUpdates(userInitiated: Boolean = true) {
+        viewModelScope.launch {
+            _isCheckingUpdate.value = true
+            updateManager.checkForUpdates().fold(
+                onSuccess = { info ->
+                    _isCheckingUpdate.value = false
+                    _updateInfo.value = info
+                    if (!info.isUpdateAvailable && userInitiated) {
+                        _uiMessage.value = "Tenés instalada la versión más reciente (${info.currentVersion})."
+                    }
+                },
+                onFailure = { error ->
+                    _isCheckingUpdate.value = false
+                    if (userInitiated) {
+                        _uiMessage.value = "No se pudo verificar actualizaciones: ${error.message ?: "Sin conexión"}"
+                    }
+                }
+            )
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _updateInfo.value = null
+        _downloadProgress.value = null
+    }
+
+    fun downloadAndInstallUpdate(info: AppUpdateInfo) {
+        val url = info.apkDownloadUrl ?: return
+        val fileName = info.apkFileName ?: "EsteticaPatri-${info.latestVersion}.apk"
+
+        viewModelScope.launch {
+            _downloadProgress.value = 0.01f
+            updateManager.downloadApk(url, fileName) { progress ->
+                _downloadProgress.value = progress
+            }.fold(
+                onSuccess = { apkFile ->
+                    _downloadProgress.value = null
+                    _updateInfo.value = null
+                    updateManager.startInstall(apkFile)
+                },
+                onFailure = { error ->
+                    _downloadProgress.value = null
+                    _uiMessage.value = "Error al descargar actualización: ${error.message}"
+                }
+            )
         }
     }
 

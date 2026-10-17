@@ -1,16 +1,23 @@
 package com.esteticapatri.app.ui.newappointment
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,8 +62,8 @@ fun NewAppointmentScreen(
         }
     }
 
-    var showClientDropdown by remember { mutableStateOf(false) }
-    var showServiceDropdown by remember { mutableStateOf(false) }
+    var showClientDialog by remember { mutableStateOf(false) }
+    var showServiceDialog by remember { mutableStateOf(false) }
     var showDatePickerDialog by remember { mutableStateOf(false) }
     var showTimePickerDialog by remember { mutableStateOf(false) }
 
@@ -93,75 +100,112 @@ fun NewAppointmentScreen(
         ) {
             // Client Selector
             Text("1. Seleccionar Clienta *", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Box {
-                OutlinedTextField(
-                    value = selectedClient?.name ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    placeholder = { Text("Tocá para elegir una clienta") },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+            Surface(
+                onClick = { showClientDialog = true },
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, if (selectedClient != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+                color = if (selectedClient != null) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showClientDropdown = true }
-                )
-                DropdownMenu(
-                    expanded = showClientDropdown,
-                    onDismissRequest = { showClientDropdown = false },
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (clients.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("No hay clientas registradas. Agregá una primero.") },
-                            onClick = { showClientDropdown = false }
-                        )
-                    } else {
-                        clients.forEach { client ->
-                            DropdownMenuItem(
-                                text = { Text("${client.name} ${client.phone?.let { "($it)" } ?: ""}") },
-                                onClick = {
-                                    viewModel.selectClient(client.id)
-                                    showClientDropdown = false
-                                }
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (selectedClient != null) {
+                            Text(
+                                text = selectedClient.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            selectedClient.phone?.let { phone ->
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = phone,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "Tocá para elegir una clienta",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (clients.isEmpty()) "No hay clientas cargadas" else "${clients.size} clientas disponibles",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Desplegar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
             }
 
             // Service Selector
             Text("2. Tratamiento / Servicio *", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Box {
-                OutlinedTextField(
-                    value = selectedService?.let { "${it.name} (${it.durationMinutes} min)" } ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    placeholder = { Text("Tocá para elegir un tratamiento") },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+            Surface(
+                onClick = { showServiceDialog = true },
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, if (selectedService != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+                color = if (selectedService != null) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showServiceDropdown = true }
-                )
-                DropdownMenu(
-                    expanded = showServiceDropdown,
-                    onDismissRequest = { showServiceDropdown = false },
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (services.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("No hay tratamientos registrados. Agregá uno primero.") },
-                            onClick = { showServiceDropdown = false }
-                        )
-                    } else {
-                        services.forEach { service ->
-                            DropdownMenuItem(
-                                text = { Text("${service.name} (${service.durationMinutes} min)") },
-                                onClick = {
-                                    viewModel.selectService(service.id)
-                                    showServiceDropdown = false
-                                }
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (selectedService != null) {
+                            Text(
+                                text = selectedService.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            val priceText = selectedService.priceMinorUnits?.let { " • $${it / 100}" } ?: ""
+                            Text(
+                                text = "${selectedService.durationMinutes} minutos$priceText",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text(
+                                text = "Tocá para elegir un tratamiento",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (services.isEmpty()) "No hay tratamientos cargados" else "${services.size} tratamientos disponibles",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Desplegar",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
             }
 
@@ -289,6 +333,260 @@ fun NewAppointmentScreen(
                 Text("Confirmar y Agendar Turno", style = MaterialTheme.typography.titleMedium)
             }
         }
+    }
+
+    // Client Selection Dialog
+    if (showClientDialog) {
+        var clientFilter by remember { mutableStateOf("") }
+        val filteredClients = remember(clients, clientFilter) {
+            if (clientFilter.isBlank()) clients
+            else clients.filter {
+                it.name.contains(clientFilter, ignoreCase = true) ||
+                (it.phone != null && it.phone.contains(clientFilter))
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showClientDialog = false },
+            title = {
+                Text(
+                    text = "Seleccionar Clienta",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                ) {
+                    if (clients.isNotEmpty()) {
+                        OutlinedTextField(
+                            value = clientFilter,
+                            onValueChange = { clientFilter = it },
+                            placeholder = { Text("Buscar clienta...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+
+                    if (clients.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Aún no hay clientas registradas.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Agregá clientas en la pestaña 'Clientas'.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else if (filteredClients.isEmpty()) {
+                        Text(
+                            text = "No se encontraron clientas para '$clientFilter'.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(filteredClients) { client ->
+                                Surface(
+                                    onClick = {
+                                        viewModel.selectClient(client.id)
+                                        showClientDialog = false
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (client.id == selectedClientId) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = client.name,
+                                                fontWeight = FontWeight.SemiBold,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            client.phone?.let { phone ->
+                                                Text(
+                                                    text = phone,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        if (client.id == selectedClientId) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Seleccionada",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showClientDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // Service Selection Dialog
+    if (showServiceDialog) {
+        var serviceFilter by remember { mutableStateOf("") }
+        val filteredServices = remember(services, serviceFilter) {
+            if (serviceFilter.isBlank()) services
+            else services.filter {
+                it.name.contains(serviceFilter, ignoreCase = true)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showServiceDialog = false },
+            title = {
+                Text(
+                    text = "Seleccionar Tratamiento",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                ) {
+                    if (services.isNotEmpty()) {
+                        OutlinedTextField(
+                            value = serviceFilter,
+                            onValueChange = { serviceFilter = it },
+                            placeholder = { Text("Buscar tratamiento...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+
+                    if (services.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Spa,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Aún no hay tratamientos registrados.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Agregá tratamientos en la pestaña 'Servicios'.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else if (filteredServices.isEmpty()) {
+                        Text(
+                            text = "No se encontraron tratamientos para '$serviceFilter'.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                            items(filteredServices) { service ->
+                                Surface(
+                                    onClick = {
+                                        viewModel.selectService(service.id)
+                                        showServiceDialog = false
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (service.id == selectedServiceId) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = service.name,
+                                                fontWeight = FontWeight.SemiBold,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            val priceText = service.priceMinorUnits?.let { " • $${it / 100}" } ?: ""
+                                            Text(
+                                                text = "${service.durationMinutes} min$priceText",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (service.id == selectedServiceId) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Seleccionado",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showServiceDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
     }
 
     // Material 3 Date Picker Dialog

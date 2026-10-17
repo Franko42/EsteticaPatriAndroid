@@ -13,15 +13,15 @@ import androidx.compose.ui.platform.LocalContext
 
 private val PastelLightColorScheme = lightColorScheme(
     primary = PastelRose,
-    onPrimary = Color.White,
+    onPrimary = Color(0xFF111111), // Negro profundo para máximo contraste sobre rosa claro
     primaryContainer = PastelRoseLightContainer,
     onPrimaryContainer = PastelRoseOnContainer,
     secondary = PastelLavender,
-    onSecondary = Color.White,
+    onSecondary = Color(0xFF111111),
     secondaryContainer = PastelLavenderContainer,
     onSecondaryContainer = PastelLavenderOnContainer,
     tertiary = PastelPeach,
-    onTertiary = Color.White,
+    onTertiary = Color(0xFF111111),
     tertiaryContainer = PastelPeachContainer,
     onTertiaryContainer = PastelPeachOnContainer,
     background = PastelBackground,
@@ -29,34 +29,34 @@ private val PastelLightColorScheme = lightColorScheme(
     surface = PastelSurface,
     onSurface = PastelOnSurface,
     surfaceVariant = PastelSurfaceVariant,
-    onSurfaceVariant = Color(0xFF6B4D58),
+    onSurfaceVariant = Color(0xFF4A3B40),
     outline = PastelOutline
 )
 
 private val VelvetDarkColorScheme = darkColorScheme(
     primary = VelvetRose,
-    onPrimary = Color(0xFF560A29),
+    onPrimary = Color(0xFF111111),
     primaryContainer = VelvetRoseContainer,
     onPrimaryContainer = VelvetRoseOnContainer,
     secondary = VelvetLavender,
-    onSecondary = Color(0xFF381F42),
+    onSecondary = Color(0xFF111111),
     secondaryContainer = VelvetLavenderContainer,
     onSecondaryContainer = Color(0xFFF3E8FF),
     tertiary = Color(0xFFFFB69D),
-    onTertiary = Color(0xFF501F0E),
+    onTertiary = Color(0xFF111111),
     background = VelvetBackground,
     onBackground = VelvetOnBackground,
     surface = VelvetSurface,
     onSurface = VelvetOnSurface,
     surfaceVariant = VelvetSurfaceVariant,
-    onSurfaceVariant = Color(0xFFD8BFC8),
+    onSurfaceVariant = Color(0xFFE8CCD2),
     outline = VelvetOutline
 )
 
 @Composable
 fun EsteticaPatriTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Default false to keep curated pastel salon identity
+    darkTheme: Boolean = false, // Forzado modo claro por defecto
+    dynamicColor: Boolean = false, // Mantener identidad estética de salón
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

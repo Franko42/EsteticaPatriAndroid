@@ -3,25 +3,25 @@ package com.esteticapatri.app.ui.theme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Pastel Feminine Aesthetics - Estética Patri
-val PastelRose = Color(0xFFD85D7F)
-val PastelRoseLightContainer = Color(0xFFFFE8EF)
-val PastelRoseOnContainer = Color(0xFF491024)
+// Official Brand Identity Palette - Estética Patri
+val PastelRose = Color(0xFFFF9CAC) // Rosa principal de marca
+val PastelRoseLightContainer = Color(0xFFFFD6DC) // Rosa claro
+val PastelRoseOnContainer = Color(0xFF111111) // Negro profundo
 
-val PastelLavender = Color(0xFF8D6E97)
-val PastelLavenderContainer = Color(0xFFF3E8FF)
-val PastelLavenderOnContainer = Color(0xFF33143B)
+val PastelLavender = Color(0xFFE89CB0) // Rosa suave para acentos
+val PastelLavenderContainer = Color(0xFFFFF0F3)
+val PastelLavenderOnContainer = Color(0xFF111111)
 
-val PastelPeach = Color(0xFFD97757)
-val PastelPeachContainer = Color(0xFFFFECE2)
-val PastelPeachOnContainer = Color(0xFF421B0E)
+val PastelPeach = Color(0xFFF47791)
+val PastelPeachContainer = Color(0xFFFFE5EA)
+val PastelPeachOnContainer = Color(0xFF111111)
 
-val PastelBackground = Color(0xFFFFF8FA)
+val PastelBackground = Color(0xFFF7F4F2) // Marfil cálido
 val PastelSurface = Color(0xFFFFFFFF)
-val PastelSurfaceVariant = Color(0xFFFDF0F4)
+val PastelSurfaceVariant = Color(0xFFFFF5F7)
 val PastelOutline = Color(0xFFEED5DC)
-val PastelOnBackground = Color(0xFF2D161F)
-val PastelOnSurface = Color(0xFF2D161F)
+val PastelOnBackground = Color(0xFF111111)
+val PastelOnSurface = Color(0xFF111111)
 
 // Dark Palette with Velvet Rose tones
 val VelvetRose = Color(0xFFFFB1C8)

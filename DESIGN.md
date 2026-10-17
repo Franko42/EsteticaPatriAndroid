@@ -5,15 +5,17 @@ La usuaria completa tareas cotidianas de gestión (agendar turnos, revisar horar
 
 ---
 
-## 1. Paleta de Colores y Esquema Material 3
+## 1. Paleta de Colores y Esquema Material 3 (Identidad Oficial)
 
-### Primario (Rosa / Flor de Loto)
-- **Light:** `Primary: #9C415D`, `OnPrimary: #FFFFFF`, `PrimaryContainer: #FFD9E2`, `OnPrimaryContainer: #3E001D`
-- **Dark:** `Primary: #FFB1C8`, `OnPrimary: #5E1133`, `PrimaryContainer: #7D2947`, `OnPrimaryContainer: #FFD9E2`
+### Primario y Marca (Rosa / Isotipo Refinado)
+- **Rosa principal (`#FF9CAC`):** Botones de acción, acentos y marca.
+- **Rosa claro (`#FFD6DC`):** Superficies suaves, contenedores (`PrimaryContainer`).
+- **Negro profundo (`#111111`):** Isotipo, títulos, textos de alto contraste (`OnSurface`, `OnPrimaryContainer`).
+- **Rosa suave (`#E89CB0`):** Acentos secundarios, bordes sutiles y chips.
 
 ### Superficies y Fondo
-- **Light:** `Surface: #FFF8F8`, `OnSurface: #22191C`, `SurfaceVariant: #F2DDE1`, `Outline: #837377`
-- **Dark:** `Surface: #191114`, `OnSurface: #EFE0E2`, `SurfaceVariant: #514347`, `Outline: #9E8C90`
+- **Light:** `Surface: #FFFFFF`, `OnSurface: #111111`, `Background: #F7F4F2` (Marfil cálido), `SurfaceVariant: #FFF5F7`, `Outline: #EED5DC`
+- **Dark:** `Surface: #1F151A`, `OnSurface: #F7F4F2`, `Background: #140E11`, `SurfaceVariant: #2F1E26`, `Outline: #523440`
 
 ### Estados Semánticos (Contraste WCAG AA >= 4.5:1)
 - **Programado (`SCHEDULED`):** Azul `Light: #1565C0`, `Dark: #90CAF9`
@@ -22,17 +24,18 @@ La usuaria completa tareas cotidianas de gestión (agendar turnos, revisar horar
 - **No asistió (`NO_SHOW`):** Naranja `Light: #EF6C00`, `Dark: #FFCC80`
 
 ### Dynamic Color (Material You)
-En Android 12+ (`API 31+`), la app deriva los tonos secundarios desde el wallpaper del dispositivo respetando la armonía tonal si la usuaria lo prefiere.
+En Android 12+ (`API 31+`), la app permite mantener fija la identidad de marca o derivar tonos secundarios del wallpaper si la usuaria lo prefiere.
 
 ---
 
 ## 2. Tipografía y Escala
-- **Fuente base:** Roboto / Sistema Android con escalado automático (`sp`).
+- **Familia de marca recomendada:** **Montserrat** (Títulos: SemiBold 600; Textos y botones: Regular / Medium 400-500).
+- **Fuente de sistema (Fallback):** Roboto / Sistema Android con escalado dinámico (`sp`).
 - **Jerarquía:**
-  - `TitleLarge`: Nombres de clientas, encabezados de tarjeta (22sp, SemiBold).
-  - `TitleMedium`: Horarios, nombres de tratamientos (16sp, SemiBold).
-  - `BodyMedium`: Teléfonos, notas, textos descriptivos (14sp).
-  - `LabelMedium`: Insignias de estado (12sp, Bold).
+  - `TitleLarge`: Nombres de clientas, encabezados de tarjeta (22sp, SemiBold / Montserrat 600).
+  - `TitleMedium`: Horarios, nombres de tratamientos (16sp, SemiBold / Montserrat 600).
+  - `BodyMedium`: Teléfonos, notas, textos descriptivos (14sp, Regular / Montserrat 400).
+  - `LabelMedium`: Insignias de estado (12sp, Bold / Montserrat 700).
 
 ---
 

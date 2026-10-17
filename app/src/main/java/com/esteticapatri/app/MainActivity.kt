@@ -15,7 +15,8 @@ class MainActivity : ComponentActivity() {
         val appointmentId = intent?.getLongExtra("EXTRA_APPOINTMENT_ID", -1L)?.takeIf { it > 0 }
 
         setContent {
-            EsteticaPatriTheme {
+            // Modo claro forzado para asegurar legibilidad total y contraste óptimo
+            EsteticaPatriTheme(darkTheme = false) {
                 MainScreen(initialAppointmentId = appointmentId)
             }
         }
