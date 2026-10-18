@@ -109,7 +109,8 @@ class AppUpdateManager(
         onProgress: (Float) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
-            val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
+            val baseDir = context.getExternalFilesDir(null) ?: context.cacheDir
+            val updatesDir = File(baseDir, "updates").apply { mkdirs() }
             val outputFile = File(updatesDir, targetFileName)
             val tempFile = File(updatesDir, "$targetFileName.tmp")
 
@@ -168,11 +169,17 @@ class AppUpdateManager(
                 tempFile.delete()
             }
 
+            outputFile.setReadable(true, false)
             outputFile
         }
     }
 
     fun startInstall(apkFile: File) {
+        if (!apkFile.exists() || apkFile.length() == 0L) {
+            error("El archivo APK descargado no es válido o está vacío.")
+        }
+        apkFile.setReadable(true, false)
+
         val apkUri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
@@ -193,7 +200,16 @@ class AppUpdateManager(
             setDataAndType(apkUri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
         }
+
+        // Grant explicit URI read permission to all candidate package installer activities
+        val resolveInfoList = context.packageManager.queryIntentActivities(installIntent, 0)
+        for (resolveInfo in resolveInfoList) {
+            val targetPackage = resolveInfo.activityInfo.packageName
+            context.grantUriPermission(targetPackage, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
         context.startActivity(installIntent)
     }
 
