@@ -36,7 +36,7 @@ class BackupManager(
     companion object {
         const val CURRENT_FORMAT_VERSION = 1
         const val APP_VERSION = "0.1.0"
-        private const val MAX_LOCAL_BACKUPS = 14
+        const val MAX_LOCAL_BACKUPS = 3
         private const val GCM_IV_LENGTH_BYTES = 12
         private const val GCM_TAG_LENGTH_BITS = 128
         private const val PBKDF2_ITERATIONS = 10000

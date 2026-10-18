@@ -12,6 +12,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        com.esteticapatri.app.backup.DailyBackupScheduler.scheduleDailyBackup(this)
+
         val appointmentId = intent?.getLongExtra("EXTRA_APPOINTMENT_ID", -1L)?.takeIf { it > 0 }
 
         setContent {

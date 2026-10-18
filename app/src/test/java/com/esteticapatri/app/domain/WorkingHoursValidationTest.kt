@@ -80,4 +80,36 @@ class WorkingHoursValidationTest {
         val sunEnd = sunday.atTime(11, 0).atZone(zone).toInstant().toEpochMilli()
         assertFalse(useCases.isWithinWorkingHours(sunStart, sunEnd, zone))
     }
+
+    @Test
+    fun allowsUpdatingAndRespectsCustomizedWorkingHours() = runBlocking {
+        val dao = FakeWorkingHoursDao()
+        val useCases = WorkingHoursUseCases(dao)
+
+        useCases.getOrInitializeDefaults()
+
+        // Configure Tuesday to be 14:00 to 20:00 (840m to 1200m)
+        val result = useCases.updateWorkingHours(
+            WorkingHoursEntity(
+                dayOfWeek = 2, // Tuesday
+                enabled = true,
+                startMinuteOfDay = 14 * 60,
+                endMinuteOfDay = 20 * 60
+            )
+        )
+        assertTrue(result.isSuccess)
+
+        val zone = ZoneId.systemDefault()
+        val tuesday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.TUESDAY))
+
+        // 10:00 to 11:00 on Tuesday -> now outside hours (opens at 14:00)
+        val morningStart = tuesday.atTime(10, 0).atZone(zone).toInstant().toEpochMilli()
+        val morningEnd = tuesday.atTime(11, 0).atZone(zone).toInstant().toEpochMilli()
+        assertFalse(useCases.isWithinWorkingHours(morningStart, morningEnd, zone))
+
+        // 16:00 to 17:00 on Tuesday -> within customized hours
+        val afternoonStart = tuesday.atTime(16, 0).atZone(zone).toInstant().toEpochMilli()
+        val afternoonEnd = tuesday.atTime(17, 0).atZone(zone).toInstant().toEpochMilli()
+        assertTrue(useCases.isWithinWorkingHours(afternoonStart, afternoonEnd, zone))
+    }
 }

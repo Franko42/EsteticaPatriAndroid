@@ -9,6 +9,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent?.action == Intent.ACTION_BOOT_COMPLETED) {
             val scheduler = WorkManagerReminderScheduler(context)
             scheduler.rescheduleAllPendingReminders()
+            com.esteticapatri.app.backup.DailyBackupScheduler.scheduleDailyBackup(context)
         }
     }
 }

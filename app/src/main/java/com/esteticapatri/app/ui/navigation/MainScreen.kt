@@ -30,6 +30,7 @@ import com.esteticapatri.app.ui.agenda.AgendaScreen
 import com.esteticapatri.app.ui.agenda.AgendaViewModel
 import com.esteticapatri.app.ui.clients.ClientsScreen
 import com.esteticapatri.app.ui.clients.ClientsViewModel
+import com.esteticapatri.app.ui.components.AppUpdateDialog
 import com.esteticapatri.app.ui.components.SplashScreen
 import com.esteticapatri.app.ui.newappointment.NewAppointmentScreen
 import com.esteticapatri.app.ui.newappointment.NewAppointmentViewModel
@@ -43,11 +44,20 @@ import kotlinx.coroutines.delay
 fun MainScreen(
     initialAppointmentId: Long? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val settingsVm: SettingsViewModel = viewModel()
+    val updateInfo by settingsVm.updateInfo.collectAsState()
+    val downloadProgress by settingsVm.downloadProgress.collectAsState()
     var showSplash by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         delay(2000) // Branded welcome moment
         showSplash = false
+        // Disparar búsqueda automática de actualizaciones en segundo plano al arrancar la app
+        settingsVm.checkForUpdates(userInitiated = false)
+        // Comprobar y realizar la copia de seguridad diaria automática (1 vez por día, máx 3 copias)
+        com.esteticapatri.app.backup.DailyBackupScheduler.checkAndRunDailyBackupNow(context)
+        settingsVm.refreshLocalBackups()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -134,7 +144,6 @@ fun MainScreen(
                         }
 
                         composable(Screen.Settings.route) {
-                            val settingsVm: SettingsViewModel = viewModel()
                             SettingsScreen(viewModel = settingsVm)
                         }
                     }
@@ -207,12 +216,22 @@ fun MainScreen(
                         }
 
                         composable(Screen.Settings.route) {
-                            val settingsVm: SettingsViewModel = viewModel()
                             SettingsScreen(viewModel = settingsVm)
                         }
                     }
                 }
             }
+        }
+
+        // Diálogo global de actualización cuando hay una nueva versión disponible
+        val currentUpdate = updateInfo
+        if (currentUpdate != null && currentUpdate.isUpdateAvailable) {
+            AppUpdateDialog(
+                updateInfo = currentUpdate,
+                downloadProgress = downloadProgress,
+                onConfirmUpdate = { settingsVm.downloadAndInstallUpdate(it) },
+                onDismiss = { settingsVm.dismissUpdateDialog() }
+            )
         }
 
         // Branded Splash / Loading Overlay

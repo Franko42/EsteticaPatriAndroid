@@ -39,7 +39,6 @@ fun SettingsScreen(
     val localBackups by viewModel.localBackups.collectAsState()
     val uiMessage by viewModel.uiMessage.collectAsState()
     val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
-    val updateInfo by viewModel.updateInfo.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -47,6 +46,7 @@ fun SettingsScreen(
     var showCreateBackupDialog by remember { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showRestorePasswordDialog by remember { mutableStateOf(false) }
+    var editingWorkingHours by remember { mutableStateOf<WorkingHoursEntity?>(null) }
 
     val exportFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -235,7 +235,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Exportá o restaurá tus datos usando Storage Access Framework de manera segura. Cada restauración genera automáticamente un respaldo preventivo de tus datos vigentes.",
+                            "El sistema genera una copia de seguridad automática diaria al arrancar el día, conservando las últimas 3 copias (reescribiendo la más antigua). También podés exportar o restaurar tus respaldos manualmente.",
                             style = MaterialTheme.typography.bodyMedium
                         )
 
@@ -286,11 +286,18 @@ fun SettingsScreen(
             // Local Backups List
             if (localBackups.isNotEmpty()) {
                 item {
-                    Text(
-                        "Respaldos locales en dispositivo (${localBackups.size})",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            "Copias de respaldo locales (${localBackups.size}/3)",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Historial de las últimas 3 copias automáticas y manuales guardadas en el dispositivo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 items(localBackups) { file ->
@@ -318,11 +325,18 @@ fun SettingsScreen(
             // Working Hours Section
             item {
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Horarios de Atención",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "Horarios de Atención",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Activá o desactivá cada día y tocá sobre las horas para configurar apertura y cierre.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             items(workingHours) { entity ->
@@ -330,6 +344,9 @@ fun SettingsScreen(
                     entity = entity,
                     onToggle = { enabled ->
                         viewModel.updateDayHours(entity.copy(enabled = enabled))
+                    },
+                    onConfigureHours = {
+                        editingWorkingHours = entity
                     }
                 )
             }
@@ -447,74 +464,14 @@ fun SettingsScreen(
         )
     }
 
-    val currentUpdate = updateInfo
-    if (currentUpdate != null && currentUpdate.isUpdateAvailable) {
-        AlertDialog(
-            onDismissRequest = {
-                if (downloadProgress == null) viewModel.dismissUpdateDialog()
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.SystemUpdate,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = "Nueva Versión Disponible",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Versión: ${currentUpdate.latestVersion} (Actual: v${currentUpdate.currentVersion})",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = currentUpdate.releaseNotes,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val progress = downloadProgress
-                    if (progress != null) {
-                        Spacer(Modifier.height(4.dp))
-                        LinearProgressIndicator(
-                            progress = { progress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                        )
-                        Text(
-                            text = if (progress >= 1f) "Abriendo instalador del sistema..." else "Descargando: ${(progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.downloadAndInstallUpdate(currentUpdate) },
-                    enabled = downloadProgress == null
-                ) {
-                    Text(if (downloadProgress != null) "Descargando..." else "Actualizar ahora")
-                }
-            },
-            dismissButton = {
-                if (downloadProgress == null) {
-                    TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
-                        Text("Más tarde")
-                    }
-                }
+    val currentEditing = editingWorkingHours
+    if (currentEditing != null) {
+        EditWorkingHoursDialog(
+            entity = currentEditing,
+            onDismiss = { editingWorkingHours = null },
+            onSave = { updated ->
+                viewModel.updateDayHours(updated)
+                editingWorkingHours = null
             }
         )
     }
@@ -523,7 +480,8 @@ fun SettingsScreen(
 @Composable
 private fun WorkingHoursRow(
     entity: WorkingHoursEntity,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    onConfigureHours: () -> Unit
 ) {
     val dayName = when (entity.dayOfWeek) {
         1 -> "Lunes"
@@ -554,14 +512,42 @@ private fun WorkingHoursRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(dayName, fontWeight = FontWeight.SemiBold)
                 if (entity.enabled) {
-                    Text(
-                        "%02d:%02d a %02d:%02d hs".format(startH, startM, endH, endM),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(Modifier.height(6.dp))
+                    Surface(
+                        onClick = onConfigureHours,
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.AccessTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "%02d:%02d a %02d:%02d hs".format(startH, startM, endH, endM),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Modificar horario de atención",
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 } else {
                     Text(
                         "Cerrado",
