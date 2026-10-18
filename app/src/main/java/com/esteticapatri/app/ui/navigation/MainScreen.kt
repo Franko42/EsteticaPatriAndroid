@@ -38,6 +38,7 @@ import com.esteticapatri.app.ui.services.ServicesScreen
 import com.esteticapatri.app.ui.services.ServicesViewModel
 import com.esteticapatri.app.ui.settings.SettingsScreen
 import com.esteticapatri.app.ui.settings.SettingsViewModel
+import com.esteticapatri.app.updater.AppUpdateInfo
 import kotlinx.coroutines.delay
 
 @Composable

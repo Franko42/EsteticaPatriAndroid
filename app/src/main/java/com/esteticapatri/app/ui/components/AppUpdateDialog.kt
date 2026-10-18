@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.esteticapatri.app.data.updates.AppUpdateInfo
+import com.esteticapatri.app.updater.AppUpdateInfo
 
 @Composable
 fun AppUpdateDialog(
