@@ -71,10 +71,12 @@ fun AgendaScreen(
                             shadowElevation = 2.dp
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.logo_estetica_patri),
+                                painter = painterResource(id = R.drawable.ic_logo_estetica),
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(2.dp)
                             )
                         }
                         Spacer(Modifier.width(10.dp))

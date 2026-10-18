@@ -24,7 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.esteticapatri.app.R
 import com.esteticapatri.app.data.local.ClientEntity
 import com.esteticapatri.app.data.local.ServiceEntity
 import com.esteticapatri.app.integrations.WhatsAppHelper
@@ -73,7 +78,26 @@ fun NewAppointmentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agendar Turno", fontWeight = FontWeight.Bold) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(32.dp),
+                            shape = CircleShape,
+                            shadowElevation = 2.dp
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_logo_estetica),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(2.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text("Agendar Turno", fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateBack,

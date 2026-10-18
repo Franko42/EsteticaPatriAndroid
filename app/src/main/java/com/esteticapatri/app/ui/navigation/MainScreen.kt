@@ -46,7 +46,7 @@ fun MainScreen(
     var showSplash by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        delay(1400) // Brief branded loading moment
+        delay(2000) // Branded welcome moment
         showSplash = false
     }
 
@@ -221,7 +221,7 @@ fun MainScreen(
             enter = fadeIn(),
             exit = fadeOut(animationSpec = tween(500))
         ) {
-            SplashScreen()
+            SplashScreen(onDismiss = { showSplash = false })
         }
     }
 }

@@ -28,8 +28,11 @@ import com.esteticapatri.app.R
 import com.esteticapatri.app.ui.theme.LavenderBlushGradient
 import com.esteticapatri.app.ui.theme.PastelRose
 
+import androidx.compose.foundation.clickable
+
 @Composable
 fun SplashScreen(
+    onDismiss: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -46,7 +49,8 @@ fun SplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(LavenderBlushGradient),
+            .background(LavenderBlushGradient)
+            .then(if (onDismiss != null) Modifier.clickable { onDismiss() } else Modifier),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -64,11 +68,12 @@ fun SplashScreen(
                 color = Color.White
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_estetica_patri),
+                    painter = painterResource(id = R.drawable.ic_logo_estetica),
                     contentDescription = "Logo Estética Patri",
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(8.dp)
                         .clip(CircleShape)
                 )
             }
