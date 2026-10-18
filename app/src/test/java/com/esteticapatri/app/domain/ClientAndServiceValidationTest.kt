@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -157,6 +158,20 @@ class ClientAndServiceValidationTest {
         assertTrue(result.isSuccess)
         assertEquals(0, result.getOrNull())
         assertTrue(clientDao.getAllActive().isEmpty())
+    }
+
+    @Test
+    fun arePhonesMatching_validations() {
+        // Matches exact normalized
+        assertTrue(arePhonesMatching("5493764112233", "5493764112233"))
+        // Matches country code prefix variation
+        assertTrue(arePhonesMatching("+54 9 376 411-2233", "3764112233"))
+        assertTrue(arePhonesMatching("3764112233", "+54 9 376 411-2233"))
+        // Different numbers rejected
+        assertFalse(arePhonesMatching("3764112233", "3764999999"))
+        // Blank or null rejected
+        assertFalse(arePhonesMatching(null, "3764112233"))
+        assertFalse(arePhonesMatching("   ", "3764112233"))
     }
 }
 

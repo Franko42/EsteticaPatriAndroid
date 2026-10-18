@@ -51,6 +51,16 @@ data class ClientImportCandidate(
     val notes: String? = null
 )
 
+fun arePhonesMatching(p1: String?, p2: String?): Boolean {
+    if (p1.isNullOrBlank() || p2.isNullOrBlank()) return false
+    val digits1 = p1.filter(Char::isDigit)
+    val digits2 = p2.filter(Char::isDigit)
+    if (digits1.isEmpty() || digits2.isEmpty()) return false
+    if (digits1 == digits2) return true
+    val minLen = minOf(digits1.length, digits2.length)
+    return minLen >= 8 && (digits1.endsWith(digits2) || digits2.endsWith(digits1))
+}
+
 class ImportClients(private val dao: ClientDao) {
     suspend operator fun invoke(candidates: List<ClientImportCandidate>): Result<Int> = runCatching {
         if (candidates.isEmpty()) return@runCatching 0
@@ -73,9 +83,9 @@ class ImportClients(private val dao: ClientDao) {
             val nameKey = trimmedName.lowercase()
             val phoneKey = normalizedPhone?.takeIf { it.isNotEmpty() }
 
-            val alreadyInDb = (phoneKey != null && existingNormalizedPhones.contains(phoneKey)) ||
+            val alreadyInDb = (phoneKey != null && existingNormalizedPhones.any { arePhonesMatching(it, phoneKey) }) ||
                 existingNames.contains(nameKey)
-            val alreadyInBatch = (phoneKey != null && seenPhonesInBatch.contains(phoneKey)) ||
+            val alreadyInBatch = (phoneKey != null && seenPhonesInBatch.any { arePhonesMatching(it, phoneKey) }) ||
                 seenNamesInBatch.contains(nameKey)
 
             if (!alreadyInDb && !alreadyInBatch) {

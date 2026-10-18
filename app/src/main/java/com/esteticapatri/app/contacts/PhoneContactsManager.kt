@@ -56,7 +56,7 @@ object PhoneContactsManager {
                     val key = if (normalized.isNotEmpty()) normalized else name.lowercase()
                     if (!seenKeys.contains(key)) {
                         seenKeys.add(key)
-                        val isAlreadyRegistered = (normalized.isNotEmpty() && existingNormalizedPhones.contains(normalized)) ||
+                        val isAlreadyRegistered = (normalized.isNotEmpty() && existingNormalizedPhones.any { com.esteticapatri.app.domain.arePhonesMatching(it, normalized) }) ||
                             existingNames.contains(name.lowercase())
 
                         contactsList.add(
