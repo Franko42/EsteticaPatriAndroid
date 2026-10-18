@@ -5,13 +5,15 @@
   - `theme/`: Paleta visual y estilos Compose para Estética Patri (`Color.kt`, `Theme.kt`).
   - `navigation/`: Enrutamiento con Jetpack Navigation Compose y barra de navegación inferior (`MainScreen.kt`, `NavRoutes.kt`).
   - `agenda/`: Vista diaria con navegación entre días, estados de turnos con insignias de color, y acciones rápidas (`AgendaScreen.kt`, `AgendaViewModel.kt`).
-  - `clients/`: Directorio y búsqueda de clientas, diálogos de alta/edición, contacto directo por WhatsApp y baja lógica (`ClientsScreen.kt`, `ClientsViewModel.kt`).
+  - `clients/`: Directorio y búsqueda de clientas, diálogos de alta/edición, importación en lote desde contactos (`BatchImportContactsDialog.kt`), contacto directo por WhatsApp y baja lógica (`ClientsScreen.kt`, `ClientsViewModel.kt`).
   - `services/`: Catálogo de tratamientos y servicios con duración y precios (`ServicesScreen.kt`, `ServicesViewModel.kt`).
   - `newappointment/`: Asistente de reserva con validación de horarios, cálculo automático de fin según servicio, detección de solapamientos y confirmación por WhatsApp (`NewAppointmentScreen.kt`, `NewAppointmentViewModel.kt`).
   - `settings/`: Configuración de horarios de atención comercial, creación/exportación/restauración de backups y panel de privacidad (`SettingsScreen.kt`, `SettingsViewModel.kt`).
+- `contacts/`:
+  - `PhoneContactsManager`: lectura segura de contactos del teléfono mediante `ContentResolver`, normalización de números telefónicos, prevención de duplicados con clientas existentes y selección individual vía Intent/URI.
 - `domain/`:
   - Reglas y casos de uso para turnos: `CreateAppointment`, `CancelAppointment`, `RescheduleAppointment`, `UpdateAppointmentStatus`, `GetAgendaAppointments`.
-  - Reglas para clientas: `CreateClient`, `UpdateClient`, `DeactivateClient`, `GetClients`.
+  - Reglas para clientas: `CreateClient`, `UpdateClient`, `DeactivateClient`, `GetClients`, `ImportClients` (validación, deduplicación e importación en lote).
   - Reglas para servicios: `CreateService`, `UpdateService`, `DeactivateService`, `GetServices`.
   - Horarios de atención: `WorkingHoursUseCases` (detección de horario comercial, configuración por día).
 - `data/local/`:

@@ -14,7 +14,11 @@ interface ClientDao {
     @Query("SELECT * FROM clients WHERE active = 1 AND (name LIKE '%' || :query || '%' OR phone LIKE '%' || :query || '%') ORDER BY name COLLATE NOCASE")
     fun searchActive(query: String): Flow<List<ClientEntity>>
 
+    @Query("SELECT * FROM clients WHERE active = 1")
+    suspend fun getAllActive(): List<ClientEntity>
+
     @Insert suspend fun insert(client: ClientEntity): Long
+    @Insert suspend fun insertAll(clients: List<ClientEntity>): List<Long>
     @Update suspend fun update(client: ClientEntity)
     @Query("UPDATE clients SET active = 0 WHERE id = :id")
     suspend fun deactivate(id: Long)

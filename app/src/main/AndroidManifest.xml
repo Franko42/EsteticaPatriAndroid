@@ -4,6 +4,8 @@
     <!-- Permisos exclusivos para auto-actualización nativa desde GitHub Releases (sin telemetría de clientas/turnos) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Permiso exclusivo para importación local de clientas desde la libreta de contactos del teléfono -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:allowBackup="false"

@@ -21,10 +21,18 @@ class FakeClientDao : ClientDao {
     override fun searchActive(query: String): Flow<List<ClientEntity>> = flowOf(
         items.filter { it.active && (it.name.contains(query, ignoreCase = true) || (it.phone?.contains(query) == true)) }
     )
+    override suspend fun getAllActive(): List<ClientEntity> = items.filter { it.active }
     override suspend fun insert(client: ClientEntity): Long {
         val assigned = client.copy(id = nextId++)
         items.add(assigned)
         return assigned.id
+    }
+    override suspend fun insertAll(clients: List<ClientEntity>): List<Long> {
+        return clients.map { client ->
+            val assigned = client.copy(id = nextId++)
+            items.add(assigned)
+            assigned.id
+        }
     }
     override suspend fun update(client: ClientEntity) {
         val idx = items.indexOfFirst { it.id == client.id }
@@ -98,4 +106,57 @@ class ClientAndServiceValidationTest {
         val ok = createService("Limpieza Facial", 60, priceMinorUnits = 850000)
         assertTrue(ok.isSuccess)
     }
+
+    @Test
+    fun importClients_deduplicatesAgainstExistingAndWithinBatch() = runBlocking {
+        val clientDao = FakeClientDao()
+        val createClient = CreateClient(clientDao)
+        val importClients = ImportClients(clientDao)
+
+        // 1. Cliente existente previo
+        createClient("Camila Silva", "+54 9 376 411-2233")
+
+        // 2. Lote con:
+        // - Duplicado por teléfono de Camila Silva
+        // - Duplicado por nombre existente
+        // - Nombre en blanco (inválido)
+        // - Dos entradas idénticas entre sí en el mismo lote ("Valeria Díaz")
+        // - Una clienta válida nueva ("Sofía Acosta")
+        val candidates = listOf(
+            ClientImportCandidate(name = "Cami Silva", phone = "3764112233"),
+            ClientImportCandidate(name = "Camila Silva", phone = "5493764999999"),
+            ClientImportCandidate(name = "   ", phone = "5493764000000"),
+            ClientImportCandidate(name = "Valeria Díaz", phone = "+54 9 376 455-6677"),
+            ClientImportCandidate(name = "Valeria Díaz", phone = "5493764556677"),
+            ClientImportCandidate(name = "Sofía Acosta", phone = "+54 9 376 488-9900")
+        )
+
+        val result = importClients(candidates)
+        assertTrue(result.isSuccess)
+        assertEquals(2, result.getOrNull())
+
+        val active = clientDao.getAllActive()
+        // Camila (original) + Valeria (1 vez) + Sofía (1 vez) = 3 total
+        assertEquals(3, active.size)
+
+        val valeria = active.find { it.name == "Valeria Díaz" }
+        assertNotNull(valeria)
+        assertEquals("5493764556677", valeria?.normalizedPhone)
+
+        val sofia = active.find { it.name == "Sofía Acosta" }
+        assertNotNull(sofia)
+        assertEquals("5493764889900", sofia?.normalizedPhone)
+    }
+
+    @Test
+    fun importClients_emptyBatchReturnsZero() = runBlocking {
+        val clientDao = FakeClientDao()
+        val importClients = ImportClients(clientDao)
+
+        val result = importClients(emptyList())
+        assertTrue(result.isSuccess)
+        assertEquals(0, result.getOrNull())
+        assertTrue(clientDao.getAllActive().isEmpty())
+    }
 }
+

@@ -28,6 +28,13 @@ import com.esteticapatri.app.ui.components.EmptyStateCard
 import com.esteticapatri.app.ui.theme.LavenderBlushGradient
 import com.esteticapatri.app.ui.theme.PastelOutline
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.esteticapatri.app.contacts.PhoneContactsManager
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientsScreen(
@@ -37,11 +44,45 @@ fun ClientsScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val uiMessage by viewModel.uiMessage.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val showBatchImportDialog by viewModel.showBatchImportDialog.collectAsState()
+    val phoneContacts by viewModel.phoneContacts.collectAsState()
+    val selectedContactKeys by viewModel.selectedContactKeys.collectAsState()
+    val contactSearchQuery by viewModel.contactSearchQuery.collectAsState()
+    val isLoadingContacts by viewModel.isLoadingContacts.collectAsState()
+    val isImporting by viewModel.isImporting.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var clientToEdit by remember { mutableStateOf<ClientEntity?>(null) }
     var clientToDelete by remember { mutableStateOf<ClientEntity?>(null) }
+    var showPermissionRationale by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.openBatchImportDialog(context)
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Se requiere permiso de Contactos para la importación en lote.")
+            }
+        }
+    }
+
+    val requestContactsImport = {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            viewModel.openBatchImportDialog(context)
+        } else {
+            showPermissionRationale = true
+        }
+    }
 
     LaunchedEffect(uiMessage) {
         uiMessage?.let {
@@ -71,6 +112,18 @@ fun ClientsScreen(
                         }
                         Spacer(Modifier.width(10.dp))
                         Text("Directorio de Clientas", fontWeight = FontWeight.Bold)
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = requestContactsImport,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GroupAdd,
+                            contentDescription = "Importar clientas desde contactos",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -127,14 +180,31 @@ fun ClientsScreen(
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    EmptyStateCard(
-                        imageResId = R.drawable.illustration_clients_beauty,
-                        title = if (searchQuery.isEmpty()) "Aún no hay clientas registradas" else "No se encontraron clientas",
-                        description = if (searchQuery.isEmpty()) "Comenzá a registrar a tus clientas para agendar turnos y contactarlas directamente por WhatsApp." else "Probá buscando con otro nombre o número.",
-                        actionLabel = if (searchQuery.isEmpty()) "Agregar Clienta" else null,
-                        actionIcon = Icons.Default.PersonAdd,
-                        onActionClick = { showAddDialog = true }
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        EmptyStateCard(
+                            imageResId = R.drawable.illustration_clients_beauty,
+                            title = if (searchQuery.isEmpty()) "Aún no hay clientas registradas" else "No se encontraron clientas",
+                            description = if (searchQuery.isEmpty()) "Comenzá a registrar a tus clientas para agendar turnos y contactarlas directamente por WhatsApp." else "Probá buscando con otro nombre o número.",
+                            actionLabel = if (searchQuery.isEmpty()) "Agregar Clienta" else null,
+                            actionIcon = Icons.Default.PersonAdd,
+                            onActionClick = { showAddDialog = true }
+                        )
+
+                        if (searchQuery.isEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            OutlinedButton(
+                                onClick = requestContactsImport,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Importar desde contactos del teléfono")
+                            }
+                        }
+                    }
                 }
             } else {
                 LazyColumn(
@@ -159,6 +229,57 @@ fun ClientsScreen(
                 }
             }
         }
+    }
+
+    if (showBatchImportDialog) {
+        BatchImportContactsDialog(
+            contacts = phoneContacts,
+            selectedKeys = selectedContactKeys,
+            searchQuery = contactSearchQuery,
+            isLoading = isLoadingContacts,
+            isImporting = isImporting,
+            onSearchQueryChange = { viewModel.onContactSearchQueryChange(it) },
+            onToggleSelect = { viewModel.toggleContactSelection(it) },
+            onToggleSelectAll = { select, filtered -> viewModel.toggleSelectAll(select, filtered) },
+            onConfirmImport = { viewModel.importSelectedContacts() },
+            onDismiss = { viewModel.closeBatchImportDialog() }
+        )
+    }
+
+    if (showPermissionRationale) {
+        AlertDialog(
+            onDismissRequest = { showPermissionRationale = false },
+            icon = {
+                Icon(
+                    Icons.Default.Contacts,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = {
+                Text("Permiso de Contactos", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    "Estética Patri necesita acceso de lectura a tus contactos para permitirte seleccionar e importar clientas a tu agenda local.\n\nLa aplicación es 100% offline y tus contactos jamás saldrán de tu dispositivo."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPermissionRationale = false
+                        permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                    }
+                ) {
+                    Text("Continuar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionRationale = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 
     if (showAddDialog) {
@@ -329,15 +450,37 @@ private fun ClientFormDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, phone: String?, notes: String?) -> Unit
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf(initialName) }
     var phone by remember { mutableStateOf(initialPhone) }
     var notes by remember { mutableStateOf(initialNotes) }
+
+    val contactPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickContact()
+    ) { uri ->
+        uri?.let {
+            PhoneContactsManager.getContactFromUri(context, it)?.let { contact ->
+                if (contact.name.isNotBlank()) name = contact.name
+                if (contact.phoneNumber.isNotBlank()) phone = contact.phoneNumber
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { contactPickerLauncher.launch(null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.ContactPhone, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Elegir de contactos del teléfono")
+                }
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -381,3 +524,4 @@ private fun ClientFormDialog(
         }
     )
 }
+

@@ -24,4 +24,11 @@ Leer `README.md` y `docs/` antes de programar.
 7. Preparación de mensajes de WhatsApp con envío manual.
 8. Accesibilidad, pruebas y revisión de privacidad.
 
-Definition of Done: `./gradlew test` y `./gradlew assembleDebug` pasan; las limitaciones están documentadas; no se agregan permisos sin justificación.
+## Entorno de compilación y CI/CD (IMPORTANTE)
+- **NO descargar ni instalar Java, JDK ni Gradle localmente en la máquina.**
+- La compilación (`assembleDebug`), ejecución de tests (`testDebugUnitTest`) y generación/distribución del APK se realizan exclusivamente en la nube mediante **GitHub Actions** (`.github/workflows/android.yml`).
+- El agente debe desarrollar el código y las pruebas unitarias correspondientes (`app/src/test/`), asegurando consistencia estática, sin intentar ejecutar `gradlew` localmente descargando binarios al sistema host.
+- Si un test falla en CI, el pipeline sube el registro a la rama `ci-log` en `ci-failure-log.txt`.
+
+Definition of Done: Pruebas unitarias agregadas/mantenidas para el código nuevo; la compilación y tests pasan en GitHub Actions; las limitaciones están documentadas; no se agregan permisos sin justificación.
+

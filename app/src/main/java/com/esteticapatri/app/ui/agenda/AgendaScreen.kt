@@ -80,7 +80,7 @@ fun AgendaScreen(
                             )
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text("Agenda de Turnos", fontWeight = FontWeight.Bold)
+                        Text("Estética Patri Turnos", fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

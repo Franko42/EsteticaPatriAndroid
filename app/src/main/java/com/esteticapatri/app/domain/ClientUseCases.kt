@@ -44,3 +44,60 @@ class GetClients(private val dao: ClientDao) {
         if (query.isBlank()) dao.observeActive() else dao.searchActive(query.trim())
     suspend fun getById(id: Long): ClientEntity? = dao.getById(id)
 }
+
+data class ClientImportCandidate(
+    val name: String,
+    val phone: String? = null,
+    val notes: String? = null
+)
+
+class ImportClients(private val dao: ClientDao) {
+    suspend operator fun invoke(candidates: List<ClientImportCandidate>): Result<Int> = runCatching {
+        if (candidates.isEmpty()) return@runCatching 0
+
+        val existing = dao.getAllActive()
+        val existingNormalizedPhones = existing.mapNotNull { it.normalizedPhone }.toSet()
+        val existingNames = existing.map { it.name.trim().lowercase() }.toSet()
+
+        val entitiesToInsert = mutableListOf<ClientEntity>()
+        val seenPhonesInBatch = mutableSetOf<String>()
+        val seenNamesInBatch = mutableSetOf<String>()
+
+        for (candidate in candidates) {
+            val trimmedName = candidate.name.trim()
+            if (trimmedName.isEmpty()) continue
+
+            val cleanPhone = candidate.phone?.trim()?.takeIf { it.isNotEmpty() }
+            val normalizedPhone = cleanPhone?.filter(Char::isDigit)
+
+            val nameKey = trimmedName.lowercase()
+            val phoneKey = normalizedPhone?.takeIf { it.isNotEmpty() }
+
+            val alreadyInDb = (phoneKey != null && existingNormalizedPhones.contains(phoneKey)) ||
+                existingNames.contains(nameKey)
+            val alreadyInBatch = (phoneKey != null && seenPhonesInBatch.contains(phoneKey)) ||
+                seenNamesInBatch.contains(nameKey)
+
+            if (!alreadyInDb && !alreadyInBatch) {
+                if (phoneKey != null) seenPhonesInBatch.add(phoneKey)
+                seenNamesInBatch.add(nameKey)
+
+                entitiesToInsert.add(
+                    ClientEntity(
+                        name = trimmedName,
+                        phone = cleanPhone,
+                        normalizedPhone = normalizedPhone,
+                        notes = candidate.notes?.trim()?.takeIf { it.isNotEmpty() }
+                    )
+                )
+            }
+        }
+
+        if (entitiesToInsert.isNotEmpty()) {
+            dao.insertAll(entitiesToInsert)
+        }
+
+        entitiesToInsert.size
+    }
+}
+

@@ -38,3 +38,8 @@ Aplicación integral para la gestión de turnos, clientas y servicios de estéti
 - Validar solapamientos dentro de una transacción Room.
 - Backup versionado, validado y cifrado antes de usar con datos reales.
 - WhatsApp queda en modo preparar mensaje y abrir chat para envío manual.
+
+## Compilación y CI/CD
+- **Nube:** La compilación (`assembleDebug`), ejecución de pruebas unitarias (`testDebugUnitTest`) y generación del APK se realizan en la nube mediante **GitHub Actions** (`.github/workflows/android.yml`).
+- No es necesario ni se debe instalar Java, Gradle o Android SDK en la máquina local de desarrollo.
+
