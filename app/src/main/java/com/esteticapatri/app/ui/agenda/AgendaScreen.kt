@@ -298,6 +298,7 @@ private fun AppointmentItemCard(
     val startTime = Instant.ofEpochMilli(item.appointment.startEpochMillis).atZone(zone).format(timeFormatter)
     val endTime = Instant.ofEpochMilli(item.appointment.endEpochMillis).atZone(zone).format(timeFormatter)
     val dateStr = Instant.ofEpochMilli(item.appointment.startEpochMillis).atZone(zone).format(dateFormatter)
+    var menuExpanded by remember { mutableStateOf(false) }
 
     val (statusLabel, token) = when (item.appointment.status) {
         AppointmentEntity.SCHEDULED -> "Programado" to StatusColors.scheduled()
@@ -342,18 +343,118 @@ private fun AppointmentItemCard(
                     )
                 }
 
-                // Status Badge
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = token.container
-                ) {
-                    Text(
-                        text = statusLabel,
-                        color = token.color,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
+                // Status Badge & Dropdown Action Menu
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = token.container
+                    ) {
+                        Text(
+                            text = statusLabel,
+                            color = token.color,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.width(4.dp))
+
+                    Box {
+                        IconButton(
+                            onClick = { menuExpanded = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Opciones del turno",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            item.client.phone?.let { phone ->
+                                DropdownMenuItem(
+                                    text = { Text("Enviar WhatsApp") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Send,
+                                            contentDescription = null,
+                                            tint = Color(0xFF25D366)
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        val msg = WhatsAppMessageBuilder.buildReminderMessage(
+                                            clientName = item.client.name,
+                                            serviceName = item.service.name,
+                                            formattedDate = dateStr,
+                                            formattedTime = startTime
+                                        )
+                                        WhatsAppHelper.launchChat(context, phone, msg)
+                                    }
+                                )
+                            }
+
+                            if (item.appointment.status == AppointmentEntity.SCHEDULED) {
+                                DropdownMenuItem(
+                                    text = { Text("Marcar atendido") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = StatusColors.completed().color
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onComplete()
+                                    }
+                                )
+
+                                DropdownMenuItem(
+                                    text = { Text("Marcar que no asistió") },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Warning,
+                                            contentDescription = null,
+                                            tint = StatusColors.noShow().color
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onRequestNoShow()
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Cancelar turno",
+                                            color = MaterialTheme.colorScheme.error,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Cancel,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onRequestCancel()
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -422,75 +523,6 @@ private fun AppointmentItemCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // Action Buttons with >= 48dp touch targets and 8dp spacing
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // WhatsApp Button
-                item.client.phone?.let { phone ->
-                    IconButton(
-                        onClick = {
-                            val msg = WhatsAppMessageBuilder.buildReminderMessage(
-                                clientName = item.client.name,
-                                serviceName = item.service.name,
-                                formattedDate = dateStr,
-                                formattedTime = startTime
-                            )
-                            WhatsAppHelper.launchChat(context, phone, msg)
-                        },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Send,
-                            contentDescription = "Enviar recordatorio por WhatsApp",
-                            tint = Color(0xFF25D366)
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                }
-
-                if (item.appointment.status == AppointmentEntity.SCHEDULED) {
-                    IconButton(
-                        onClick = onComplete,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = "Marcar completado",
-                            tint = StatusColors.completed().color
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = onRequestNoShow,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = "Marcar no asistió",
-                            tint = StatusColors.noShow().color
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = onRequestCancel,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Cancel,
-                            contentDescription = "Cancelar turno",
-                            tint = StatusColors.cancelled().color
-                        )
-                    }
                 }
             }
         }
