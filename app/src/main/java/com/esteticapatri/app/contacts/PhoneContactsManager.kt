@@ -34,7 +34,7 @@ object PhoneContactsManager {
                 projection,
                 null,
                 null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " COLLATE NOCASE ASC"
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} ASC"
             )
         }.getOrNull()
 
@@ -77,36 +77,85 @@ object PhoneContactsManager {
     }
 
     fun getContactFromUri(context: Context, contactUri: Uri): PhoneContact? {
-        val projection = arrayOf(
+        val resolver = context.contentResolver
+
+        // 1. Intentar consultar directamente si la URI apunta a CommonDataKinds.Phone
+        val phoneProjection = arrayOf(
             ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.NUMBER
         )
-        val cursor = runCatching {
-            context.contentResolver.query(contactUri, projection, null, null, null)
+        val directResult = runCatching {
+            resolver.query(contactUri, phoneProjection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+                    val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                    val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+                    val id = if (idIndex >= 0) cursor.getString(idIndex) ?: "" else ""
+                    val name = if (nameIndex >= 0) cursor.getString(nameIndex)?.trim() ?: "" else ""
+                    val number = if (numberIndex >= 0) cursor.getString(numberIndex)?.trim() ?: "" else ""
+                    val normalized = number.filter(Char::isDigit)
+
+                    if (name.isNotEmpty() || number.isNotEmpty()) {
+                        PhoneContact(
+                            id = id,
+                            name = name,
+                            phoneNumber = number,
+                            normalizedPhone = normalized
+                        )
+                    } else null
+                } else null
+            }
         }.getOrNull()
 
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val idIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-                val nameIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-                val numberIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        if (directResult != null && (directResult.name.isNotEmpty() || directResult.phoneNumber.isNotEmpty())) {
+            return directResult
+        }
 
-                val id = if (idIndex >= 0) it.getString(idIndex) ?: "" else ""
-                val name = if (nameIndex >= 0) it.getString(nameIndex)?.trim() ?: "" else ""
-                val number = if (numberIndex >= 0) it.getString(numberIndex)?.trim() ?: "" else ""
-                val normalized = number.filter(Char::isDigit)
+        // 2. Si la URI apunta a ContactsContract.Contacts (general), resolver nombre y teléfono asociado
+        return runCatching {
+            var contactId = ""
+            var contactName = ""
 
-                if (name.isNotEmpty() || number.isNotEmpty()) {
-                    return PhoneContact(
-                        id = id,
-                        name = name,
-                        phoneNumber = number,
-                        normalizedPhone = normalized
-                    )
+            val contactsProjection = arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME
+            )
+            resolver.query(contactUri, contactsProjection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIdx = cursor.getColumnIndex(ContactsContract.Contacts._ID)
+                    val nameIdx = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                    contactId = if (idIdx >= 0) cursor.getString(idIdx) ?: "" else ""
+                    contactName = if (nameIdx >= 0) cursor.getString(nameIdx)?.trim() ?: "" else ""
                 }
             }
-        }
-        return null
+
+            var phoneNumber = ""
+            if (contactId.isNotEmpty()) {
+                val phoneQueryProjection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                resolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    phoneQueryProjection,
+                    "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+                    arrayOf(contactId),
+                    null
+                )?.use { phoneCursor ->
+                    if (phoneCursor.moveToFirst()) {
+                        val numIdx = phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                        phoneNumber = if (numIdx >= 0) phoneCursor.getString(numIdx)?.trim() ?: "" else ""
+                    }
+                }
+            }
+
+            if (contactName.isNotEmpty() || phoneNumber.isNotEmpty()) {
+                PhoneContact(
+                    id = contactId,
+                    name = contactName,
+                    phoneNumber = phoneNumber,
+                    normalizedPhone = phoneNumber.filter(Char::isDigit)
+                )
+            } else null
+        }.getOrNull()
     }
 }

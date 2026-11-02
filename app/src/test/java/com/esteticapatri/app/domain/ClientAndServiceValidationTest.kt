@@ -167,8 +167,14 @@ class ClientAndServiceValidationTest {
         // Matches country code prefix variation
         assertTrue(arePhonesMatching("+54 9 376 411-2233", "3764112233"))
         assertTrue(arePhonesMatching("3764112233", "+54 9 376 411-2233"))
+        // Matches 0 and 15 prefixes common in Argentina
+        assertTrue(arePhonesMatching("0376 15 411-2233", "+54 9 376 411-2233"))
+        assertTrue(arePhonesMatching("0376 411-2233", "5493764112233"))
+        assertTrue(arePhonesMatching("011 15 4455-6677", "+54 9 11 4455-6677"))
+        assertTrue(arePhonesMatching("15 411-2233", "3764112233"))
         // Different numbers rejected
         assertFalse(arePhonesMatching("3764112233", "3764999999"))
+        assertFalse(arePhonesMatching("0376 15 411-2233", "0376 15 499-9999"))
         // Blank or null rejected
         assertFalse(arePhonesMatching(null, "3764112233"))
         assertFalse(arePhonesMatching("   ", "3764112233"))

@@ -29,7 +29,9 @@ import com.esteticapatri.app.ui.theme.LavenderBlushGradient
 import com.esteticapatri.app.ui.theme.PastelOutline
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -457,8 +459,9 @@ private fun ClientFormDialog(
     var notes by remember { mutableStateOf(initialNotes) }
 
     val contactPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickContact()
-    ) { uri ->
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
         uri?.let {
             PhoneContactsManager.getContactFromUri(context, it)?.let { contact ->
                 if (contact.name.isNotBlank()) name = contact.name
@@ -473,7 +476,10 @@ private fun ClientFormDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
-                    onClick = { contactPickerLauncher.launch(null) },
+                    onClick = {
+                        val pickIntent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+                        contactPickerLauncher.launch(pickIntent)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 ) {

@@ -51,14 +51,47 @@ data class ClientImportCandidate(
     val notes: String? = null
 )
 
+fun extractCorePhoneDigits(phone: String?): String {
+    if (phone.isNullOrBlank()) return ""
+    var digits = phone.filter(Char::isDigit)
+    if (digits.isEmpty()) return ""
+    if (digits.startsWith("54")) {
+        digits = digits.removePrefix("54")
+        if (digits.startsWith("9")) {
+            digits = digits.removePrefix("9")
+        }
+    }
+    if (digits.startsWith("0")) {
+        digits = digits.removePrefix("0")
+    }
+    if (digits.length == 12) {
+        val idx15 = digits.indexOf("15")
+        if (idx15 in 2..4) {
+            digits = digits.removeRange(idx15, idx15 + 2)
+        }
+    } else if (digits.length in 9..10 && digits.startsWith("15")) {
+        digits = digits.removePrefix("15")
+    }
+    return digits
+}
+
 fun arePhonesMatching(p1: String?, p2: String?): Boolean {
     if (p1.isNullOrBlank() || p2.isNullOrBlank()) return false
-    val digits1 = p1.filter(Char::isDigit)
-    val digits2 = p2.filter(Char::isDigit)
-    if (digits1.isEmpty() || digits2.isEmpty()) return false
-    if (digits1 == digits2) return true
-    val minLen = minOf(digits1.length, digits2.length)
-    return minLen >= 8 && (digits1.endsWith(digits2) || digits2.endsWith(digits1))
+    val raw1 = p1.filter(Char::isDigit)
+    val raw2 = p2.filter(Char::isDigit)
+    if (raw1.isEmpty() || raw2.isEmpty()) return false
+    if (raw1 == raw2) return true
+
+    val core1 = extractCorePhoneDigits(p1)
+    val core2 = extractCorePhoneDigits(p2)
+    if (core1.isNotEmpty() && core2.isNotEmpty()) {
+        if (core1 == core2) return true
+        val minCoreLen = minOf(core1.length, core2.length)
+        if (minCoreLen >= 7 && (core1.endsWith(core2) || core2.endsWith(core1))) return true
+    }
+
+    val minRawLen = minOf(raw1.length, raw2.length)
+    return minRawLen >= 8 && (raw1.endsWith(raw2) || raw2.endsWith(raw1))
 }
 
 class ImportClients(private val dao: ClientDao) {
