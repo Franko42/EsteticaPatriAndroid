@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,7 +36,8 @@ fun BatchImportContactsDialog(
     onToggleSelect: (String) -> Unit,
     onToggleSelectAll: (Boolean, List<PhoneContact>) -> Unit,
     onConfirmImport: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onPickVcfFile: (() -> Unit)? = null
 ) {
     val filteredContacts = remember(contacts, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -74,18 +76,45 @@ fun BatchImportContactsDialog(
                     .padding(20.dp)
             ) {
                 // Header
-                Text(
-                    text = "Importar desde Contactos",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Seleccioná los contactos del teléfono que querés agregar como clientas.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Importar Contactos",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        val unregTotal = contacts.count { !it.isAlreadyRegistered }
+                        val regTotal = contacts.count { it.isAlreadyRegistered }
+                        Text(
+                            text = if (contacts.isNotEmpty()) {
+                                "$unregTotal nuevas disponibles · $regTotal ya registradas"
+                            } else {
+                                "Seleccioná los contactos del teléfono que querés agregar como clientas."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (onPickVcfFile != null && !isImporting) {
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(
+                            onClick = onPickVcfFile,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Cargar .VCF", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(14.dp))
 
@@ -134,7 +163,7 @@ fun BatchImportContactsDialog(
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = if (allFilteredSelected) "Deseleccionar todas" else "Seleccionar todas",
+                                text = if (allFilteredSelected) "Deseleccionar todas" else "Seleccionar todas (${unregFiltered.size})",
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
@@ -155,7 +184,15 @@ fun BatchImportContactsDialog(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator()
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator()
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        "Leyendo contactos...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                         filteredContacts.isEmpty() -> {

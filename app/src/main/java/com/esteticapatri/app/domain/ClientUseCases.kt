@@ -137,7 +137,9 @@ class ImportClients(private val dao: ClientDao) {
         }
 
         if (entitiesToInsert.isNotEmpty()) {
-            dao.insertAll(entitiesToInsert)
+            entitiesToInsert.chunked(100).forEach { chunk ->
+                dao.insertAll(chunk)
+            }
         }
 
         entitiesToInsert.size

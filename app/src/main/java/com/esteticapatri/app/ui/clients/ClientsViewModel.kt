@@ -105,11 +105,12 @@ class ClientsViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun openBatchImportDialog(context: Context) {
-        viewModelScope.launch {
-            _isLoadingContacts.value = true
-            _contactSearchQuery.value = ""
-            _selectedContactKeys.value = emptySet()
+        _showBatchImportDialog.value = true
+        _isLoadingContacts.value = true
+        _contactSearchQuery.value = ""
+        _selectedContactKeys.value = emptySet()
 
+        viewModelScope.launch {
             val existingClients = withContext(Dispatchers.IO) {
                 db.clientDao().getAllActive()
             }
@@ -126,7 +127,39 @@ class ClientsViewModel(application: Application) : AndroidViewModel(application)
 
             _phoneContacts.value = fetched
             _isLoadingContacts.value = false
-            _showBatchImportDialog.value = true
+        }
+    }
+
+    fun importVcfFile(context: Context, uri: android.net.Uri) {
+        _showBatchImportDialog.value = true
+        _isLoadingContacts.value = true
+        _contactSearchQuery.value = ""
+        _selectedContactKeys.value = emptySet()
+
+        viewModelScope.launch {
+            val existingClients = withContext(Dispatchers.IO) {
+                db.clientDao().getAllActive()
+            }
+            val existingNormalizedPhones = existingClients.mapNotNull { it.normalizedPhone }.toSet()
+            val existingNames = existingClients.map { it.name.trim().lowercase() }.toSet()
+
+            val fetched = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        PhoneContactsManager.parseVcfContacts(
+                            inputStream = stream,
+                            existingNormalizedPhones = existingNormalizedPhones,
+                            existingNames = existingNames
+                        )
+                    }
+                }.getOrNull() ?: emptyList()
+            }
+
+            _phoneContacts.value = fetched
+            _isLoadingContacts.value = false
+            if (fetched.isEmpty()) {
+                _uiMessage.value = "No se encontraron contactos con teléfono en el archivo seleccionado."
+            }
         }
     }
 

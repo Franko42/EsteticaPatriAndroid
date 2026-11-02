@@ -179,5 +179,51 @@ class ClientAndServiceValidationTest {
         assertFalse(arePhonesMatching(null, "3764112233"))
         assertFalse(arePhonesMatching("   ", "3764112233"))
     }
+
+    @Test
+    fun parseVcfContacts_extractsNamesAndPhonesCorrectly() {
+        val vcfData = """
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:Mariana Lopez
+            TEL;TYPE=CELL:+54 9 376 411-2233
+            END:VCARD
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:Florencia Benitez
+            TEL;TYPE=CELL:0376 15 455-6677
+            END:VCARD
+        """.trimIndent()
+
+        val contacts = com.esteticapatri.app.contacts.PhoneContactsManager.parseVcfContacts(
+            java.io.ByteArrayInputStream(vcfData.toByteArray())
+        )
+        assertEquals(2, contacts.size)
+        val mariana = contacts.find { it.name == "Mariana Lopez" }
+        assertNotNull(mariana)
+        assertEquals("5493764112233", mariana?.normalizedPhone)
+
+        val florencia = contacts.find { it.name == "Florencia Benitez" }
+        assertNotNull(florencia)
+        assertEquals("0376154556677", florencia?.normalizedPhone)
+    }
+
+    @Test
+    fun importClients_largeBatchChunking() = runBlocking {
+        val clientDao = FakeClientDao()
+        val importClients = ImportClients(clientDao)
+
+        val candidates = (1..150).map { i ->
+            ClientImportCandidate(
+                name = "Clienta Test $i",
+                phone = "549376400${i.toString().padStart(4, '0')}"
+            )
+        }
+
+        val result = importClients(candidates)
+        assertTrue(result.isSuccess)
+        assertEquals(150, result.getOrNull())
+        assertEquals(150, clientDao.getAllActive().size)
+    }
 }
 

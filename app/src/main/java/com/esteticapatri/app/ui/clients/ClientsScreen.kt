@@ -74,6 +74,12 @@ fun ClientsScreen(
         }
     }
 
+    val vcfPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.importVcfFile(context, it) }
+    }
+
     val requestContactsImport = {
         val hasPermission = ContextCompat.checkSelfPermission(
             context,
@@ -176,6 +182,32 @@ fun ClientsScreen(
                 shape = RoundedCornerShape(16.dp)
             )
 
+            if (clients.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (searchQuery.isEmpty()) "${clients.size} clienta(s) registrada(s)" else "${clients.size} encontrada(s)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedButton(
+                        onClick = requestContactsImport,
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Importar contactos", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+
             if (clients.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -245,7 +277,8 @@ fun ClientsScreen(
             onToggleSelect = { viewModel.toggleContactSelection(it) },
             onToggleSelectAll = { select, filtered -> viewModel.toggleSelectAll(select, filtered) },
             onConfirmImport = { viewModel.importSelectedContacts() },
-            onDismiss = { viewModel.closeBatchImportDialog() }
+            onDismiss = { viewModel.closeBatchImportDialog() },
+            onPickVcfFile = { vcfPickerLauncher.launch(arrayOf("text/vcard", "text/x-vcard", "text/plain", "*/*")) }
         )
     }
 
@@ -291,6 +324,7 @@ fun ClientsScreen(
             initialName = "",
             initialPhone = "",
             initialNotes = "",
+            onOpenBatchImport = requestContactsImport,
             onDismiss = { showAddDialog = false },
             onConfirm = { name, phone, notes ->
                 viewModel.addClient(name, phone, notes)
@@ -450,6 +484,7 @@ private fun ClientFormDialog(
     initialName: String,
     initialPhone: String,
     initialNotes: String,
+    onOpenBatchImport: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     onConfirm: (name: String, phone: String?, notes: String?) -> Unit
 ) {
@@ -486,6 +521,20 @@ private fun ClientFormDialog(
                     Icon(Icons.Default.ContactPhone, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Elegir de contactos del teléfono")
+                }
+
+                if (onOpenBatchImport != null) {
+                    TextButton(
+                        onClick = {
+                            onDismiss()
+                            onOpenBatchImport()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.GroupAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("¿Querés importar en lote? Abrir importación masiva", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
 
                 OutlinedTextField(

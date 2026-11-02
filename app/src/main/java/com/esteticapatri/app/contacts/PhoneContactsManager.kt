@@ -158,4 +158,57 @@ object PhoneContactsManager {
             } else null
         }.getOrNull()
     }
+
+    fun parseVcfContacts(
+        inputStream: java.io.InputStream,
+        existingNormalizedPhones: Set<String> = emptySet(),
+        existingNames: Set<String> = emptySet()
+    ): List<PhoneContact> {
+        val contacts = mutableListOf<PhoneContact>()
+        val seenKeys = mutableSetOf<String>()
+        val reader = inputStream.bufferedReader()
+        var currentName = ""
+        var currentPhone = ""
+        var idCounter = 1
+
+        reader.forEachLine { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("BEGIN:VCARD", ignoreCase = true) -> {
+                    currentName = ""
+                    currentPhone = ""
+                }
+                trimmed.startsWith("FN:", ignoreCase = true) -> {
+                    currentName = trimmed.substring(3).trim()
+                }
+                trimmed.startsWith("TEL", ignoreCase = true) -> {
+                    val colonIdx = trimmed.indexOf(':')
+                    if (colonIdx >= 0 && currentPhone.isEmpty()) {
+                        currentPhone = trimmed.substring(colonIdx + 1).trim()
+                    }
+                }
+                trimmed.startsWith("END:VCARD", ignoreCase = true) -> {
+                    if (currentName.isNotEmpty() && currentPhone.isNotEmpty()) {
+                        val normalized = currentPhone.filter(Char::isDigit)
+                        val key = if (normalized.isNotEmpty()) normalized else currentName.lowercase()
+                        if (!seenKeys.contains(key)) {
+                            seenKeys.add(key)
+                            val isRegistered = (normalized.isNotEmpty() && existingNormalizedPhones.any { com.esteticapatri.app.domain.arePhonesMatching(it, normalized) }) ||
+                                existingNames.contains(currentName.lowercase())
+                            contacts.add(
+                                PhoneContact(
+                                    id = "vcf_${idCounter++}",
+                                    name = currentName,
+                                    phoneNumber = currentPhone,
+                                    normalizedPhone = normalized,
+                                    isAlreadyRegistered = isRegistered
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return contacts.sortedBy { it.name.lowercase() }
+    }
 }

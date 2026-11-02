@@ -10,7 +10,7 @@
   - `newappointment/`: Asistente de reserva con validación de horarios, cálculo automático de fin según servicio, detección de solapamientos y confirmación por WhatsApp (`NewAppointmentScreen.kt`, `NewAppointmentViewModel.kt`).
   - `settings/`: Configuración de horarios de atención comercial, creación/exportación/restauración de backups y panel de privacidad (`SettingsScreen.kt`, `SettingsViewModel.kt`).
 - `contacts/`:
-  - `PhoneContactsManager`: lectura segura de contactos del teléfono mediante `ContentResolver`, normalización de números telefónicos con soporte para variaciones de prefijos (código de país, 0 interurbano y 15 celular), prevención de duplicados con clientas existentes y selección individual vía Intent/URI.
+  - `PhoneContactsManager`: lectura segura de contactos del teléfono mediante `ContentResolver`, normalización de números telefónicos con soporte para variaciones de prefijos (código de país, 0 interurbano y 15 celular), soporte de importación masiva desde libreta o archivos .VCF, prevención de duplicados con clientas existentes y selección individual vía Intent/URI.
 - `domain/`:
   - Reglas y casos de uso para turnos: `CreateAppointment`, `CancelAppointment`, `RescheduleAppointment`, `UpdateAppointmentStatus`, `GetAgendaAppointments`.
   - Reglas para clientas: `CreateClient`, `UpdateClient`, `DeactivateClient`, `GetClients`, `ImportClients` (validación, deduplicación e importación en lote).
